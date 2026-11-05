@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" stroke="#d8c6a4" stroke-linecap="square">
+  <!-- corner brackets, like every panel in the theme -->
+  <path d="M8 30V8h22M98 8h22v22M120 98v22H98M30 120H8V98" stroke-width="5"/>
+  <!-- the A: two strokes and a short bar, nothing fancy -->
+  <path d="M38 96 64 30l26 66" stroke-width="7"/>
+  <path d="M51 76h26" stroke-width="5" stroke-opacity=".7"/>
+  <circle cx="64" cy="30" r="3" fill="#d8c6a4" stroke="none"/>
+</svg>

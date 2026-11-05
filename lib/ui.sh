@@ -141,9 +141,24 @@ ui_multi() {
     for i in "${!vals[@]}"; do [ "${on[$i]}" = 1 ] && echo "${vals[$i]}"; done
 }
 
-# Runs a command with a spinner (gum) or just runs it
-ui_spin() {     # ui_spin "title" cmd args...
+# Long stuff gets a spinner so nobody thinks it froze.
+# The work runs in the foreground (so functions keep their variables) and the spinner
+# runs in the background; whatever the work prints shows up after it's done.
+# Don't use it for anything that asks questions (sudo, yay…), those need the terminal.
+ui_busy() {     # ui_busy "title" cmd args...
     local title="$1"; shift
-    if [ "$USE_GUM" = 1 ]; then gum spin --title "$title" -- "$@"
-    else ui_info "$title"; "$@"; fi
+    if [ ! -t 1 ]; then "$@" </dev/null; return; fi
+    local log rc sp; log="$(mktemp)"
+    (
+        local frames=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏) i=0 t=0
+        while true; do
+            printf '\r   %s%s%s %s%s %s(%ds)%s\e[K' "$C_A" "${frames[i]}" "$C_0" "$C_T" "$title" "$C_D" $((t / 10)) "$C_0"
+            i=$(((i + 1) % 10)); t=$((t + 1)); sleep 0.1
+        done
+    ) & sp=$!
+    "$@" >"$log" 2>&1 </dev/null; rc=$?
+    kill "$sp" 2>/dev/null; wait "$sp" 2>/dev/null
+    printf '\r\e[K'
+    cat "$log"; rm -f "$log"
+    return "$rc"
 }

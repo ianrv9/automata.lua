@@ -105,7 +105,10 @@ render() {      # render <src> -> stdout
 # ── placing files ────────────────────────────
 is_managed() { grep -qxF "$1" "$STATE/managed.list" 2>/dev/null; }
 
-# place <src> <dst>: renders src into dst. If dst is yours (not ours), it's backed up first.
+# place <src> <dst>: renders src into dst.
+#  - dst is yours (we never placed it): moved to backups, uninstall puts it back
+#  - dst is ours but you edited it since: a copy of your version is kept, and you get told
+#  - dst is ours and untouched: just overwritten
 PLACED=0 BACKED=0
 place() {
     local src="$1" dst="$2" new; new="$(mktemp)"
@@ -113,19 +116,25 @@ place() {
     [ -x "$src" ] && chmod +x "$new"
     if [ -e "$dst" ] && cmp -s "$new" "$dst"; then rm -f "$new"; mark_managed "$dst"; return; fi
 
-    local backup=""
+    local backup="" edited=""
     if { [ -e "$dst" ] || [ -L "$dst" ]; } && ! is_managed "$dst"; then
         backup="$STATE/backups/$SESSION${dst#"$HOME"}"
         BACKED=$((BACKED + 1))
+    elif [ -e "$dst" ] && was_edited "$dst"; then
+        edited="$STATE/backups/$SESSION/edited${dst#"$HOME"}"
     fi
 
     if [ "${DRY_RUN:-0}" = 1 ]; then
-        ui_info "→ ${dst/#$HOME/\~}${backup:+  (${T[backup_will]})}"
+        ui_info "→ ${dst/#$HOME/\~}${backup:+  (${T[backup_will]})}${edited:+  (${T[edited_kept]} ${edited/#$HOME/\~})}"
         rm -f "$new"; return
     fi
     if [ -n "$backup" ]; then
         mkdir -p "$(dirname "$backup")" && mv "$dst" "$backup"
         printf '%s\t%s\n' "$dst" "$backup" >> "$STATE/backups.list"
+    fi
+    if [ -n "$edited" ]; then
+        mkdir -p "$(dirname "$edited")" && cp -p "$dst" "$edited"
+        ui_warn "${dst/#$HOME/\~} ${T[edited_kept]} ${edited/#$HOME/\~}"
     fi
     mkdir -p "$(dirname "$dst")"
     mv "$new" "$dst"
@@ -133,10 +142,50 @@ place() {
     mark_managed "$dst"
 }
 
+# Every file we place gets its checksum written down, that's how we notice your hand edits
+file_sum() { sha1sum "$1" 2>/dev/null | cut -d' ' -f1; }
+was_edited() {
+    local known; known="$(awk -v f="$1" '$2==f{s=$1} END{print s}' "$STATE/managed.sum" 2>/dev/null)"
+    [ -n "$known" ] && [ "$known" != "$(file_sum "$1")" ]
+}
+
 mark_managed() {
     [ "${DRY_RUN:-0}" = 1 ] && return
     mkdir -p "$STATE"
     is_managed "$1" || printf '%s\n' "$1" >> "$STATE/managed.list"
+    { grep -vF "  $1" "$STATE/managed.sum" 2>/dev/null; printf '%s  %s\n' "$(file_sum "$1")" "$1"; } > "$STATE/managed.sum.tmp"
+    mv "$STATE/managed.sum.tmp" "$STATE/managed.sum"
+}
+
+# Where a module's files end up, one path per line (same mapping as place_module)
+module_targets() {
+    local dir="$SRC/modules/$1" f
+    [ -d "$dir/home" ] && find "$dir/home" -type f | sed "s|^$dir/home/|$HOME/|"
+    [ -d "$dir/templates" ] && for f in "$dir"/templates/*; do echo "$HOME/.config/matugen/templates/$(basename "$f")"; done
+    return 0
+}
+
+# Files we placed in an older version that no version places anymore (renamed, moved, dropped).
+# They go away, or back to your original if they replaced one.
+prune_stale() {
+    [ "${DRY_RUN:-0}" = 1 ] && return
+    [ -f "$STATE/managed.list" ] || return 0
+    local wanted m f; wanted="$(mktemp)"
+    { for m in $1; do module_targets "$m"; done; echo "$HOME/.config/matugen/config.toml"; } | sort -u > "$wanted"
+    while IFS= read -r f; do
+        grep -qxF "$f" "$wanted" || restore_file "$f"
+    done < <(cat "$STATE/managed.list")
+    rm -f "$wanted"
+}
+
+# Deletes one of our files and puts yours back if there was one
+restore_file() {
+    local dst="$1" backup
+    is_managed "$dst" || return 0
+    rm -f "$dst"
+    backup="$(awk -F'\t' -v d="$dst" '$1==d{b=$2} END{print b}' "$STATE/backups.list" 2>/dev/null)"
+    if [ -n "$backup" ] && [ -e "$backup" ]; then mkdir -p "$(dirname "$dst")"; mv "$backup" "$dst"; fi
+    grep -vxF "$dst" "$STATE/managed.list" > "$STATE/managed.tmp"; mv "$STATE/managed.tmp" "$STATE/managed.list"
 }
 
 place_module() {
@@ -204,6 +253,60 @@ run_sudo() {    # run_sudo "why" cmd...
     [ "${DRY_RUN:-0}" = 1 ] && return 0
     ui_confirm "${T[plan_go]}" || return 1
     sudo "$@"
+}
+
+# ── lines in your shell's rc file ────────────
+# Everything we add lives between these two markers, so uninstall can take it out cleanly
+RC_START="# >>> automata.lua >>>"
+RC_END="# <<< automata.lua <<<"
+
+rc_has() { grep -qxF "$2" "$1" 2>/dev/null; }    # rc_has <rc> <line>
+
+rc_add() {      # rc_add <rc> <line>: puts the line inside our block (makes the block if needed)
+    local rc="$1" line="$2"
+    rc_has "$rc" "$line" && return 0
+    [ "${DRY_RUN:-0}" = 1 ] && return 0
+    touch "$rc"
+    if ! grep -qxF "$RC_START" "$rc"; then
+        printf '\n%s\n%s\n' "$RC_START" "$RC_END" >> "$rc"
+    fi
+    local tmp; tmp="$(mktemp)"
+    awk -v end="$RC_END" -v l="$line" '$0==end{print l} {print}' "$rc" > "$tmp" && cat "$tmp" > "$rc"
+    rm -f "$tmp"
+}
+
+rc_clean() {    # rc_clean <rc>: removes our block (and the old one-line style from v0.0)
+    [ -f "$1" ] || return 0
+    local tmp; tmp="$(mktemp)"
+    awk -v s="$RC_START" -v e="$RC_END" '
+        $0==s {skip=1; next}  $0==e {skip=0; next}
+        $0=="# automata.lua" {old=1; next}  old {old=0; next}
+        !skip' "$1" > "$tmp" && cat "$tmp" > "$1"
+    rm -f "$tmp"
+}
+
+rc_clean_legacy() {     # only the pre-block style ("# automata.lua" + one line)
+    [ -f "$1" ] && grep -qx '# automata.lua' "$1" || return 0
+    local tmp; tmp="$(mktemp)"
+    awk '$0=="# automata.lua" {skip=1; next} skip {skip=0; next} {print}' "$1" > "$tmp" && cat "$tmp" > "$1"
+    rm -f "$tmp"
+}
+
+# Which rc files to touch: bash always, zsh if you use it. fish doesn't need one (conf.d)
+user_rcs() {
+    echo "$HOME/.bashrc"
+    { [ -f "$HOME/.zshrc" ] || [[ "${SHELL:-}" == */zsh ]]; } && echo "$HOME/.zshrc"
+}
+
+# ── hardware + versions ──────────────────────
+HYPR_TESTED="0.57"       # newest Hyprland this was actually run on
+
+detect_gpu() {
+    local v
+    for v in /sys/class/drm/card*/device/vendor; do
+        [ "$(cat "$v" 2>/dev/null)" = "0x10de" ] && { echo nvidia; return; }
+    done
+    echo other
 }
 
 # ── reload everything that's running ─────────

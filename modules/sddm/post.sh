@@ -10,6 +10,7 @@ if ui_confirm "${T[sddm_ask]}" no; then
         printf '%s\n' "rm -rf /usr/share/sddm/themes/automata /etc/sddm.conf.d/automata.conf" >> "$STATE/system.list"
         "$HOME/.local/bin/change-wallpaper" --colors >/dev/null 2>&1
         ui_ok "${T[sddm_ok]}"
+        ui_cmd "sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/automata"
     fi
     rm -rf "$tmp"
 fi

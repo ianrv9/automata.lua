@@ -1,11 +1,8 @@
 <div align="center">
 
-```
-┌─                                                ─┐
-   ▄▀█ █ █ ▀█▀ █▀█ █▀▄▀█ ▄▀█ ▀█▀ ▄▀█   █   █ █ ▄▀█
-   █▀█ █▄█  █  █▄█ █ ▀ █ █▀█  █  █▀█ ▄ █▄▄ █▄█ █▀█
-└─                                                ─┘
-```
+<img src="assets/logo.svg" width="110" alt="automata.lua">
+
+# automata.lua
 
 **A HUD-style Hyprland desktop that repaints itself from your wallpaper.**
 
@@ -49,6 +46,16 @@ It comes with an installer that asks you things in plain words, and a settings m
 **Not for:** non-Arch distros (it can work, but you'll install packages by hand), or Hyprland older
 than 0.55. This uses the new Lua config.
 
+### Compatibility
+
+| | |
+|---|---|
+| **Tested on** | EndeavourOS · Hyprland 0.57 · AMD GPU · desktop, single monitor |
+| **Laptops** | Battery shows up in the bar by itself; brightness keys work |
+| **NVIDIA** | Detected automatically, gets the env vars Hyprland's wiki recommends. **Untested on real hardware**, reports welcome |
+| **Several monitors / HiDPI** | `automata` → Monitors (mode, scale, position per monitor) |
+| **Shells** | bash, zsh and fish |
+
 ## Previews
 
 <!-- Drop screenshots in assets/ and they show up here -->
@@ -89,10 +96,14 @@ That's it. The installer walks you through it:
 2. **Modules**: pick with the arrow keys. Apps you already have come pre-ticked.
 3. **Setup**: *Quick* (sensible defaults) or *Custom* (terminal, file manager, browser, keyboard layout,
    wallpaper folder, color style, look, bar position, lock times, fonts).
-4. **Packages**: shows what's missing and offers to install it, showing the exact command first.
-5. **Plan**: shows which of your files will be replaced. Nothing has been touched yet.
-6. **Install**: copies everything, backs up whatever it replaces, generates your colors.
-7. **Last touches**: per-app bits (Firefox profile, Spotify, login screen), each one asks first.
+4. **Your old Hyprland config** (if you have one): its keybinds, monitors, env vars and startup programs
+   get imported into `personal.lua`, so nothing you set up is lost. Binds that clash with the theme's
+   are left commented out for you to decide.
+5. **Packages**: shows what's missing and offers to install it, showing the exact command first.
+6. **Plan**: shows which of your files will be replaced. Nothing has been touched yet.
+7. **Install**: copies everything, backs up whatever it replaces, generates your colors.
+   No wallpapers yet? Three sample ones (made for this theme) get added.
+8. **Last touches**: per-app bits (Firefox profile, Spotify, login screen), each one asks first.
 
 > Paranoid? Same here. `./install --dry-run` goes through everything and shows what it *would* do, without changing a thing.
 
@@ -104,16 +115,17 @@ puts them all back.
 Run **`automata`** in a terminal and pick what you want to change:
 
 ```
- ▸ Look: gaps, borders, blur, animations
+ ▸ Style: gaps, borders, blur, animations
    Apps: terminal, files, browser
    Keyboard layout
+   Monitors: mode, scale, position
    Wallpaper and colors
    Bar
    Lock and screen off
    Fonts
    Language / Idioma
    Add or remove modules
-   Uninstall / restore my old files
+   Uninstall and restore previous files
 ```
 
 Changes apply right away. Under the hood they're saved in `~/.config/automata/settings.conf`,
@@ -134,6 +146,8 @@ a plain text file you can also edit by hand (then run `automata apply`):
 | `BAR_POSITION` | `top` or `bottom` | top |
 | `FONT_UI` / `FONT_MONO` | fonts | Space Grotesk / JetBrainsMono Nerd Font |
 | `LOCK_AFTER` / `SCREEN_OFF_AFTER` | idle minutes, `0` = never | 10 / 11 |
+| `MONITORS` | per-monitor mode, position and scale (the menu writes it) | everything automatic |
+| `GPU` | `nvidia` adds NVIDIA's env vars | detected |
 
 ### Going further
 
@@ -160,7 +174,7 @@ a plain text file you can also edit by hand (then run `automata apply`):
 | `Super + Shift + V` | Clipboard history |
 | `Super + L` | Lock |
 | `Super + Delete` | Turn the screen off |
-| `Super + M` | Log out |
+| `Super + M` | Log out (asks first) |
 | `Super + drag` | Move (left click) / resize (right click) |
 
 ## How it works (for the curious)
@@ -207,7 +221,11 @@ Your old files come back, and what automata added goes away. Packages stay, sinc
 ## Something broke?
 
 Check [docs/troubleshooting.md](docs/troubleshooting.md): login crash, monitor turning off,
-Spotify updates, Firefox not changing… If it's not there, open an issue.
+Spotify updates, Firefox not changing… If it's not there, open an issue and paste the output of
+`automata info` (versions of everything, it's what's needed to reproduce it).
+
+Hyprland, Discord and Firefox change things on their side every few weeks. `automata info` says which
+Hyprland version this was last tested on, and the installer warns you if yours is newer.
 
 ## Credits
 

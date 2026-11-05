@@ -1,4 +1,4 @@
-# Shell goodies. ~/.bashrc loads this. Every block only kicks in if the tool is installed.
+# Shell extras for bash. ~/.bashrc loads this. Each block only kicks in if the tool is installed.
 
 HISTSIZE=10000
 HISTFILESIZE=20000

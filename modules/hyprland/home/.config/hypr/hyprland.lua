@@ -29,7 +29,15 @@ local menu        = "rofi -show drun"
 local screenshot  = "bash -c 'grim -g \"$(slurp)\" - | swappy -f -'"
 
 
--- Monitors: whatever's plugged in, at its preferred mode. Want more? personal.lua
+-- Monitors. MONITORS looks like "DP-1|highrr|auto-right|1.25;HDMI-A-1|preferred|auto|1"
+-- (the `automata` menu writes it for you). Anything not listed: preferred mode, auto everything
+for entry in set("MONITORS", ""):gmatch("[^;]+") do
+    local name, mode, pos, scale = entry:match("^([^|]+)|([^|]*)|([^|]*)|([^|]*)$")
+    if name then
+        hl.monitor({ output = name, mode = mode ~= "" and mode or "preferred",
+                     position = pos ~= "" and pos or "auto", scale = tonumber(scale) or "auto" })
+    end
+end
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
 
 
@@ -44,6 +52,14 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("~/.local/bin/start-wallpaper")
 end)
 
+
+-- NVIDIA: what the Hyprland wiki asks for. Can't test it here (AMD), so tell us if it misbehaves
+if set("GPU", "other") == "nvidia" then
+    hl.env("LIBVA_DRIVER_NAME", "nvidia")
+    hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+    hl.env("NVD_BACKEND", "direct")
+    hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
+end
 
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
@@ -175,7 +191,8 @@ local mod = "SUPER"
 hl.bind(mod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mod .. " + C", hl.dsp.window.close())
-hl.bind(mod .. " + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
+-- log out, but asks first (same menu as the power button)
+hl.bind(mod .. " + M", hl.dsp.exec_cmd("~/.local/bin/power-menu --logout"))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mod .. " + R", hl.dsp.exec_cmd(menu))
 hl.bind(mod .. " + P", hl.dsp.window.pseudo())

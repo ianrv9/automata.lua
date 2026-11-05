@@ -61,7 +61,9 @@ tooltip label { color: @text; font-family: "@@FONT_MONO@@"; }
     padding: 0 12px 0 0;
 }
 #cpu, #pulseaudio { padding-left: 0; }
-#temperature, #pulseaudio.mic { padding-right: 0; }
+#temperature, #battery, #pulseaudio.mic { padding-right: 0; }
+/* battery leads with its own gap, so on desktops (no battery) nothing changes */
+#battery { padding-left: 12px; }
 #system, #audio { padding: 0 14px; }
 
 /* launcher + power buttons */
@@ -124,7 +126,8 @@ window#waybar.empty #window { color: @dim; }
 #custom-music { color: @text; }
 
 /* states */
-#temperature.critical { color: @error; }
+#temperature.critical, #battery.critical:not(.charging) { color: @error; }
+#battery.warning:not(.charging) { color: @accent; }
 #pulseaudio.muted, #pulseaudio.source-muted { color: @dim; }
 #network.disconnected { color: @error; }
 

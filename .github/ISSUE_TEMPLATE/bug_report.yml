@@ -1,0 +1,23 @@
+name: Something broke / Algo falló
+description: Report a bug (English or Spanish, both fine)
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / ¿Qué pasó?
+      description: What you did, what you expected, what you got. Screenshots help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: info
+    attributes:
+      label: Output of `automata info`
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (optional)
+      description: "~/.cache/automata/*.log, or $XDG_RUNTIME_DIR/hypr/*/hyprland.log if Hyprland crashed"
+      render: text

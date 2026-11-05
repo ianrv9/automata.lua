@@ -1,11 +1,8 @@
 <div align="center">
 
-```
-┌─                                                ─┐
-   ▄▀█ █ █ ▀█▀ █▀█ █▀▄▀█ ▄▀█ ▀█▀ ▄▀█   █   █ █ ▄▀█
-   █▀█ █▄█  █  █▄█ █ ▀ █ █▀█  █  █▀█ ▄ █▄▄ █▄█ █▀█
-└─                                                ─┘
-```
+<img src="assets/logo.svg" width="110" alt="automata.lua">
+
+# automata.lua
 
 **Un escritorio Hyprland estilo HUD que se repinta solo a partir de tu fondo de pantalla.**
 
@@ -49,6 +46,16 @@ así que **nunca tienes que tocar un archivo de configuración** a menos que qui
 **No es para:** distros que no son Arch (puede funcionar, pero instalas los paquetes a mano), ni
 Hyprland anterior a la 0.55. Esto usa la config nueva en Lua.
 
+### Compatibilidad
+
+| | |
+|---|---|
+| **Probado en** | EndeavourOS · Hyprland 0.57 · GPU AMD · escritorio, un monitor |
+| **Portátiles** | La batería aparece sola en la barra; las teclas de brillo funcionan |
+| **NVIDIA** | Se detecta sola y recibe las variables que recomienda la wiki de Hyprland. **Sin probar en hardware real**, los reportes se agradecen |
+| **Varios monitores / HiDPI** | `automata` → Monitores (modo, escala y posición de cada uno) |
+| **Shells** | bash, zsh y fish |
+
 ## Capturas
 
 <!-- Las capturas van en assets/ y aparecen aquí -->
@@ -89,10 +96,14 @@ Eso es todo. El instalador te lleva de la mano:
 2. **Módulos**: eliges con las flechas. Las apps que ya tienes vienen marcadas.
 3. **Ajustes**: *Rápido* (valores sensatos) o *A mi gusto* (terminal, gestor de archivos, navegador,
    teclado, carpeta de fondos, estilo de color, apariencia, posición de la barra, tiempos de bloqueo, fuentes).
-4. **Paquetes**: te dice qué falta y te ofrece instalarlo, enseñándote antes el comando exacto.
-5. **Plan**: te muestra qué archivos tuyos se van a reemplazar. Hasta aquí no se tocó nada.
-6. **Instalación**: copia todo, respalda lo que reemplaza y genera tus colores.
-7. **Últimos detalles**: lo de cada app (perfil de Firefox, Spotify, pantalla de inicio). Cada cosa te pregunta antes.
+4. **Tu config anterior de Hyprland** (si tienes una): sus atajos, monitores, variables y programas de inicio
+   se importan a `personal.lua`, así no pierdes nada de lo que tenías. Los atajos que chocan con los del
+   tema quedan comentados para que decidas.
+5. **Paquetes**: te dice qué falta y te ofrece instalarlo, enseñándote antes el comando exacto.
+6. **Plan**: te muestra qué archivos tuyos se van a reemplazar. Hasta aquí no se tocó nada.
+7. **Instalación**: copia todo, respalda lo que reemplaza y genera tus colores.
+   ¿Sin fondos todavía? Se agregan tres de ejemplo (hechos para este tema).
+8. **Últimos detalles**: lo de cada app (perfil de Firefox, Spotify, pantalla de inicio). Cada cosa te pregunta antes.
 
 > ¿Desconfiado? Igual yo. `./install --dry-run` hace el recorrido completo y te muestra lo que *haría*, sin cambiar nada.
 
@@ -105,15 +116,16 @@ Corre **`automata`** en una terminal y elige qué quieres cambiar:
 
 ```
  ▸ Estilo: separación, bordes, blur, animaciones
-   Apps: terminal, archivos, navegador
+   Aplicaciones: terminal, archivos, navegador
    Distribución del teclado
+   Monitores: modo, escala, posición
    Fondo y colores
    Barra
    Bloqueo y apagado de pantalla
    Fuentes
    Idioma / Language
    Agregar o quitar módulos
-   Desinstalar / recuperar mis archivos
+   Desinstalar y restaurar archivos anteriores
 ```
 
 Los cambios se aplican al momento. Por debajo se guardan en `~/.config/automata/settings.conf`,
@@ -134,6 +146,8 @@ un archivo de texto que también puedes editar a mano (y luego `automata apply`)
 | `BAR_POSITION` | `top` o `bottom` | top |
 | `FONT_UI` / `FONT_MONO` | fuentes | Space Grotesk / JetBrainsMono Nerd Font |
 | `LOCK_AFTER` / `SCREEN_OFF_AFTER` | minutos sin uso, `0` = nunca | 10 / 11 |
+| `MONITORS` | modo, posición y escala de cada monitor (lo escribe el menú) | todo automático |
+| `GPU` | `nvidia` agrega las variables de NVIDIA | detectado |
 
 ### Más allá
 
@@ -160,7 +174,7 @@ un archivo de texto que también puedes editar a mano (y luego `automata apply`)
 | `Super + Shift + V` | Historial del portapapeles |
 | `Super + L` | Bloquear |
 | `Super + Supr` | Apagar la pantalla |
-| `Super + M` | Cerrar sesión |
+| `Super + M` | Cerrar sesión (pregunta antes) |
 | `Super + arrastrar` | Mover (clic izquierdo) / redimensionar (clic derecho) |
 
 ## Cómo funciona (para curiosos)
@@ -207,7 +221,11 @@ Tus archivos de antes vuelven, y lo que agregó automata se va. Los paquetes se 
 ## ¿Algo falló?
 
 Mira [docs/troubleshooting.es.md](docs/troubleshooting.es.md): crash al iniciar sesión, el monitor que se apaga,
-actualizaciones de Spotify, Firefox que no cambia… Si no está ahí, abre un issue (en español, sin problema).
+actualizaciones de Spotify, Firefox que no cambia… Si no está ahí, abre un issue (en español, sin problema)
+y pega la salida de `automata info` (las versiones de todo, es lo que hace falta para reproducirlo).
+
+Hyprland, Discord y Firefox cambian cosas por su lado cada pocas semanas. `automata info` dice con qué
+versión de Hyprland se probó por última vez, y el instalador avisa si la tuya es más nueva.
 
 ## Créditos
 

@@ -5,6 +5,7 @@
 #   automata install       install (what ./install runs)
 #   automata apply         re-render everything from settings.conf and reload
 #   automata uninstall     put your old files back
+#   automata info          versions and stuff, for bug reports
 #
 # Flags: --dry-run (only show what would happen), --yes (defaults, no questions),
 #        --modules a,b (skip the module picker)
@@ -164,6 +165,24 @@ q_screen()    { custom_only || return 2; ask_number SCREEN_OFF_AFTER "${T[q_scre
 q_font_ui()   { custom_only || return 2; FONT_UI="$(ui_input "${T[q_font_ui]}" "$FONT_UI")" || return 1; }
 q_font_mono() { custom_only || return 2; FONT_MONO="$(ui_input "${T[q_font_mono]}" "$FONT_MONO")" || return 1; }
 
+# One monitor at a time: pick it, then mode / scale / position. Stored in MONITORS
+q_monitors() {
+    local names; names="$(hyprctl monitors all 2>/dev/null | sed -n 's/^Monitor \([^ ]*\) (ID.*/\1/p')"
+    [ -n "$names" ] || { ui_warn "${T[mon_none]}"; return 1; }
+    local name mode scale pos
+    # shellcheck disable=SC2086
+    name="$(ui_choose "${T[mon_which]}" "$(head -1 <<<"$names")" $names)" || return 1
+    mode="$(ui_choose "${T[q_mon_mode]} · $name" preferred "preferred|${T[mode_preferred]}" \
+        "highrr|${T[mode_highrr]}" "highres|${T[mode_highres]}")" || return 1
+    scale="$(ui_choose "${T[q_mon_scale]} · $name" auto "auto|auto" 1 1.25 1.5 1.75 2)" || return 1
+    pos="$(ui_choose "${T[q_mon_pos]} · $name" auto "auto|${T[pos_auto]}" "auto-right|${T[pos_right]}" \
+        "auto-left|${T[pos_left]}" "auto-up|${T[pos_up]}" "auto-down|${T[pos_down]}")" || return 1
+    [ "$scale" = auto ] && scale=""
+    # replace this monitor's entry, keep the others
+    MONITORS="$(tr ';' '\n' <<<"$MONITORS" | grep -v "^$name|" | grep -v '^$' | paste -sd ';')"
+    MONITORS="${MONITORS:+$MONITORS;}$name|$mode|$pos|$scale"
+}
+
 # Paths some modules need. Empty = that module gets skipped
 q_vault() {
     grep -qw obsidian <<<"$MODS" || return 2
@@ -171,6 +190,46 @@ q_vault() {
     OBSIDIAN_VAULT="${v/#\~/$HOME}"
     if [ -d "$OBSIDIAN_VAULT/.obsidian" ]; then ui_ok "${T[vault_ok]} ${OBSIDIAN_VAULT/#$HOME/\~}"
     else ui_warn "${T[vault_bad]}"; OBSIDIAN_VAULT=""; fi
+}
+
+# Your existing Hyprland config, if there is one we didn't put there
+old_hypr_config() {
+    local f
+    for f in "$HOME/.config/hypr/hyprland.lua" "$HOME/.config/hypr/hyprland.conf"; do
+        [ -f "$f" ] && ! is_managed "$f" && { echo "$f"; return; }
+    done
+}
+q_import() {
+    grep -qw hyprland <<<"$MODS" && [ -n "$(old_hypr_config)" ] || return 2
+    IMPORT="$(ui_choose "${T[import_q]}: ${OLD_HYPR_SHOWN:-$(old_hypr_config | sed "s|^$HOME|~|")}" "${IMPORT:-keep}" \
+        "keep|${T[import_keep]}" "fresh|${T[import_fresh]}")" || return 1
+}
+
+# Runs the importer into personal.lua. hyprland.conf gets put away too, so Hyprland only sees our .lua
+import_old_config() {
+    [ "${IMPORT:-}" = keep ] || return 0
+    local old personal="$HOME/.config/hypr/personal.lua" err out
+    old="$(old_hypr_config)"; [ -n "$old" ] || return 0
+    err="$(mktemp)"; out="$(mktemp)"
+    lua "$SRC/lib/import-hypr.lua" "$old" "$SRC/modules/hyprland/home/.config/hypr/hyprland.lua" >"$out" 2>"$err" || { rm -f "$out" "$err"; return 0; }
+    [ -e "$personal" ] || cp "$SRC/modules/hyprland/personal.example.lua" "$personal"
+    { echo; cat "$out"; } >> "$personal"
+    local kb conflicts
+    kb="$(sed -n 's/^KB_LAYOUT=//p' "$err")"; [ -n "$kb" ] && KB_LAYOUT="$kb"
+    kb="$(sed -n 's/^KB_VARIANT=//p' "$err")"; [ -n "$kb" ] && KB_VARIANT="$kb"
+    conflicts="$(sed -n 's/^CONFLICTS=//p' "$err")"
+    rm -f "$out" "$err"
+    ui_ok "${T[import_done]}"
+    [ "${conflicts:-0}" -gt 0 ] && ui_info "$conflicts ${T[import_conflicts]}"
+    stash_file "$HOME/.config/hypr/hyprland.conf"
+}
+
+# Moves one of your files into the backups (uninstall brings it back)
+stash_file() {
+    [ -f "$1" ] && ! is_managed "$1" || return 0
+    local dst="$STATE/backups/$SESSION${1#"$HOME"}"
+    mkdir -p "$(dirname "$dst")" && mv "$1" "$dst"
+    printf '%s\t%s\n' "$1" "$dst" >> "$STATE/backups.list"
 }
 
 # Not a question, but it lives with them: Spotify's folder has to be writable
@@ -185,7 +244,7 @@ check_spotify() {
 
 SETUP_QUESTIONS=(q_modules q_mode q_terminal q_files q_browser q_keyboard q_wallpapers q_scheme
     q_look q_animations q_tune q_gaps_in q_gaps_out q_border q_rounding q_opacity q_blur
-    q_bar q_lock q_screen q_font_ui q_font_mono q_vault)
+    q_bar q_lock q_screen q_font_ui q_font_mono q_vault q_import)
 
 # ── pieces of the install ─────────────────────
 pick_modules() {
@@ -203,10 +262,12 @@ check_system() {
     if command -v pacman >/dev/null; then ui_ok "${T[arch_ok]}"; else ui_warn "${T[arch_no]}"; fi
     local v; v="$(hypr_version)"
     if [ -z "$v" ]; then ui_warn "${T[hypr_missing]}"
-    elif version_ge "$v" "$HYPR_MIN"; then ui_ok "${T[hypr_ok]} $v"
-    else ui_warn "${T[hypr_old]} ($v)"; fi
+    elif ! version_ge "$v" "$HYPR_MIN"; then ui_warn "${T[hypr_old]} ($v)"
+    elif version_ge "$v" "${HYPR_TESTED}.99"; then ui_warn "Hyprland $v ${T[hypr_newer]} $HYPR_TESTED"
+    else ui_ok "${T[hypr_ok]} $v"; fi
+    GPU="$(detect_gpu)"
+    [ "$GPU" = nvidia ] && ui_warn "${T[gpu_nvidia]}"
 }
-
 install_packages() {
     local repo="" aur="" m h
     for m in $1; do repo+=" $(module_get "$m" PACKAGES)"; aur+=" $(module_get "$m" AUR)"; done
@@ -234,7 +295,8 @@ install_packages() {
 self_install() {
     [ "$SRC" = "$SHARE" ] && return
     rm -rf "$SHARE.new"; mkdir -p "$SHARE.new" "$HOME/.local/bin"
-    cp -r "$SRC"/{bin,lib,lang,modules,defaults.conf} "$SHARE.new"/
+    cp -r "$SRC"/{bin,lib,lang,modules,defaults.conf,VERSION} "$SHARE.new"/
+    [ -d "$SRC/wallpapers" ] && cp -r "$SRC/wallpapers" "$SHARE.new"/
     rm -rf "$SHARE"; mv "$SHARE.new" "$SHARE"
     ln -sfn "$SHARE/bin/automata" "$HOME/.local/bin/automata"
 }
@@ -250,6 +312,7 @@ apply_all() {
     PLACED=0 BACKED=0
     for m in $mods; do place_module "$m"; done
     build_matugen "$mods"
+    prune_stale "$mods"
     [ "$DRY_RUN" = 1 ] && return
     "$HOME/.local/bin/change-wallpaper" --colors >/dev/null 2>&1
     reload_desktop
@@ -262,6 +325,49 @@ run_post() {    # post.sh can use everything here: ui_*, T[], run_sudo, settings
         [ "$DRY_RUN" = 1 ] && { ui_info "$(module_get "$m" NAME): post.sh"; continue; }
         . "$SRC/modules/$m/post.sh"
     done
+}
+
+# Empty wallpaper folder = the first login looks dead. Ours go in, and the first one gets set
+sample_wallpapers() {
+    [ -d "$SRC/wallpapers" ] || return 0
+    if [ -z "$(find -L "$WALLPAPER_DIR" -type f 2>/dev/null | head -1)" ]; then
+        mkdir -p "$WALLPAPER_DIR/automata"
+        cp "$SRC"/wallpapers/* "$WALLPAPER_DIR/automata/"
+        ui_ok "${T[wallpapers_added]} ${WALLPAPER_DIR/#$HOME/\~}/automata"
+    fi
+    if [ ! -f "$(cat "$STATE/wallpaper" 2>/dev/null)" ]; then
+        local first; first="$(find -L "$WALLPAPER_DIR" -type f -iregex '.*\.\(jpg\|jpeg\|png\|webp\)' | sort | head -1)"
+        [ -n "$first" ] && printf '%s\n' "$first" > "$STATE/wallpaper" && "$HOME/.local/bin/change-wallpaper" --colors >/dev/null 2>&1
+    fi
+}
+
+# ~/.local/bin in PATH (or `automata` is "command not found") + the shell module's extras.
+# Both live in one marked block in ~/.bashrc / ~/.zshrc; fish reads conf.d by itself.
+shell_setup() {
+    local rc name want_path=0 want_shell=0
+    [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || want_path=1
+    is_installed shell && want_shell=1
+    for rc in $(user_rcs); do
+        name="${rc/#$HOME/\~}"
+        rc_clean_legacy "$rc"
+        if [ "$want_path" = 1 ] && ! grep -q '\.local/bin' "$rc" 2>/dev/null; then
+            if ui_confirm "${T[path_ask]} ($name)"; then
+                rc_add "$rc" 'export PATH="$HOME/.local/bin:$PATH"'
+                ui_ok "${T[path_ok]} $name"
+            fi
+        fi
+        if [ "$want_shell" = 1 ]; then
+            local ext="bash"; [[ "$rc" == *zshrc ]] && ext="zsh"
+            local line="[ -f ~/.config/automata/shell.$ext ] && . ~/.config/automata/shell.$ext"
+            if rc_has "$rc" "$line"; then :
+            elif ui_confirm "${T[shell_ask]} $name"; then
+                rc_add "$rc" "$line"; ui_ok "${T[shell_ok]} $name"
+            else
+                ui_info "${T[shell_manual]} $name: $line"
+            fi
+        fi
+    done
+    [ "$want_shell" = 1 ] && ui_info "${T[shell_new_term]}"
 }
 
 # ── commands ─────────────────────────────────
@@ -311,12 +417,15 @@ cmd_install() {
 
     ui_step "${T[step_install]}"
     self_install
+    import_old_config
     save_settings
     save_module_list "$(modules_installed | xargs) $MODS"
-    apply_all "$(modules_installed | xargs)"
+    ui_busy "${T[busy_install]}" apply_all "$(modules_installed | xargs)"
     ui_ok "$PLACED ${T[files]}"
     [ "$BACKED" -gt 0 ] && ui_info "$BACKED ${T[backup_saved]} → ${STATE/#$HOME/\~}/backups/$SESSION"
     ui_ok "${T[colors_done]}"
+    sample_wallpapers
+    shell_setup
 
     ui_step "${T[step_extras]}"; run_post "$MODS"
 
@@ -325,7 +434,27 @@ cmd_install() {
     ui_info "${T[done_2]}"
     ui_info "${T[done_3]}"
     ui_info "${T[done_4]}"
+    # this terminal was opened before PATH changed, so `automata` won't be found in it yet
+    [[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || ui_warn "${T[done_path]}"
     echo
+}
+
+# Everything an issue needs, ready to paste
+cmd_info() {
+    load_settings
+    local os; os="$(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-?}")"
+    cat <<EOF
+automata.lua  $(cat "$SRC/VERSION" 2>/dev/null)
+system        $os · kernel $(uname -r)
+hyprland      $(hypr_version || echo -) (tested up to $HYPR_TESTED)
+gpu           $(detect_gpu) · $(lspci 2>/dev/null | grep -iE 'vga|3d' | sed 's/.*: //' | head -1)
+matugen       $(matugen --version 2>/dev/null | awk '{print $2}')
+waybar        $(waybar --version 2>/dev/null | awk '{print $2}')
+rofi          $(rofi -v 2>/dev/null | awk '{print $2}')
+gum           $(gum --version 2>/dev/null | awk '{print $3}')
+modules       $(modules_installed | xargs)
+language      $LANGUAGE
+EOF
 }
 
 cmd_apply() {
@@ -347,15 +476,6 @@ remove_module() {
     done < <(find "$dir" -type f -print0)
 }
 
-# Deletes one of our files and puts yours back if there was one
-restore_file() {
-    local dst="$1" backup
-    is_managed "$dst" || return 0
-    rm -f "$dst"
-    backup="$(awk -F'\t' -v d="$dst" '$1==d{b=$2} END{print b}' "$STATE/backups.list" 2>/dev/null)"
-    if [ -n "$backup" ] && [ -e "$backup" ]; then mkdir -p "$(dirname "$dst")"; mv "$backup" "$dst"; fi
-    grep -vxF "$dst" "$STATE/managed.list" > "$STATE/managed.tmp"; mv "$STATE/managed.tmp" "$STATE/managed.list"
-}
 
 cmd_uninstall() {
     load_settings
@@ -374,8 +494,15 @@ cmd_uninstall() {
     while IFS= read -r f; do rmdir -p --ignore-fail-on-non-empty "$f" 2>/dev/null; done <<<"$dirs"
     # generated stuff can live in YOUR folders (Obsidian vault), so only its own folder, no climbing
     while IFS= read -r f; do rmdir "$f" 2>/dev/null; done <<<"$(xargs -rd '\n' dirname <<<"$generated")"
-    # The line the shell module added
-    grep -q '^# automata.lua$' "$HOME/.bashrc" 2>/dev/null && sed -i '/^# automata.lua$/,+1d' "$HOME/.bashrc"
+    # our block in the shell rc files
+    local rc; for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do rc_clean "$rc"; done
+    # files we only moved aside (old hyprland.conf…) come back too
+    if [ -f "$STATE/backups.list" ]; then
+        local dst bak
+        while IFS=$'\t' read -r dst bak; do
+            [ ! -e "$dst" ] && [ -e "$bak" ] && { mkdir -p "$(dirname "$dst")"; mv "$bak" "$dst"; }
+        done < "$STATE/backups.list"
+    fi
     # Stuff outside $HOME (login screen) needs sudo to undo
     if [ -s "$STATE/system.list" ]; then
         local cmd
@@ -393,7 +520,7 @@ cmd_menu() {
     local pick before
     while true; do
         pick="$(ui_choose "${T[menu_title]}" "" \
-            "look|${T[m_look]}" "apps|${T[m_apps]}" "keyboard|${T[m_keyboard]}" "wallpaper|${T[m_wallpaper]}" \
+            "look|${T[m_look]}" "apps|${T[m_apps]}" "keyboard|${T[m_keyboard]}" "monitors|${T[m_monitors]}" "wallpaper|${T[m_wallpaper]}" \
             "bar|${T[m_bar]}" "idle|${T[m_idle]}" "fonts|${T[m_fonts]}" "language|${T[m_language]}" \
             "modules|${T[m_modules]}" "uninstall|${T[m_backups]}" "quit|${T[quit]}")"
         SETUP_MODE=custom TUNE=yes CUR_STEP=menu
@@ -402,6 +529,7 @@ cmd_menu() {
             look)      wizard q_look q_animations q_gaps_in q_gaps_out q_border q_rounding q_opacity q_blur || ok=1 ;;
             apps)      wizard q_terminal q_files q_browser || ok=1 ;;
             keyboard)  wizard q_keyboard || ok=1 ;;
+            monitors)  wizard q_monitors || ok=1 ;;
             wallpaper) wizard q_wallpapers q_scheme || ok=1
                        [ "$ok" = 0 ] && [ "$(yes_no "${T[pick_wallpaper_now]}?" no)" = yes ] \
                            && setsid -f "$HOME/.local/bin/change-wallpaper" >/dev/null 2>&1 ;;
@@ -419,7 +547,7 @@ cmd_menu() {
                 MODS="$now"
                 [ -n "$added" ] && { wizard q_vault; check_spotify "$added"; install_packages "$added"; }
                 save_module_list "$now"
-                save_settings; apply_all
+                save_settings; ui_busy "${T[busy_apply]}" apply_all
                 [ -n "$added" ] && run_post "$added"
                 ui_ok "${T[saved]}"; continue ;;
             uninstall) cmd_uninstall; exit 0 ;;
@@ -428,7 +556,7 @@ cmd_menu() {
         # backed out with Esc: forget the half-answered stuff
         if [ "$ok" = 1 ]; then load_settings; continue; fi
         save_settings
-        ui_spin "…" "$0" apply >/dev/null 2>&1 || true
+        ui_busy "${T[busy_apply]}" apply_all >/dev/null || true
         ui_ok "${T[saved]}"
     done
 }
@@ -436,13 +564,13 @@ cmd_menu() {
 # ── go ───────────────────────────────────────
 while [ $# -gt 0 ]; do
     case "$1" in
-        install|apply|uninstall|menu) CMD="$1" ;;
+        install|apply|uninstall|menu|info) CMD="$1" ;;
         --dry-run|--simular) DRY_RUN=1 ;;
         --yes|-y)            AUTO_YES=1 ;;
         --modules)           PICKED="${2//,/ }"; shift ;;
         --modules=*)         PICKED="${1#*=}"; PICKED="${PICKED//,/ }" ;;
         --uninstall)         CMD=uninstall ;;
-        -h|--help)           sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help)           sed -n "2,12p" "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)                   echo "?: $1"; exit 1 ;;
     esac
     shift

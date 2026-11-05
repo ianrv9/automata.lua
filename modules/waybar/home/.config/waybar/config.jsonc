@@ -65,7 +65,7 @@
 
     "group/system": {
         "orientation": "horizontal",
-        "modules": ["cpu", "memory", "temperature"]
+        "modules": ["cpu", "memory", "temperature", "battery"]
     },
     "cpu": {
         "interval": 3,
@@ -83,6 +83,16 @@
         "critical-threshold": 80,
         "format": "<span alpha='55%' size='8pt' letter_spacing='1500'>TEMP</span> {temperatureC}°",
         "format-critical": "<span alpha='75%' size='8pt' letter_spacing='1500'>TEMP</span> {temperatureC}° ▲"
+    },
+
+    // laptops only: with no battery waybar just hides it
+    "battery": {
+        "interval": 30,
+        "states": { "warning": 25, "critical": 12 },
+        "format": "<span alpha='55%' size='8pt' letter_spacing='1500'>BAT</span> {capacity}%",
+        "format-charging": "<span alpha='55%' size='8pt' letter_spacing='1500'>BAT</span> {capacity}% ↑",
+        "format-full": "<span alpha='55%' size='8pt' letter_spacing='1500'>BAT</span> {capacity}%",
+        "tooltip-format": "{timeTo} · {power:.1f} W"
     },
 
     "group/audio": {
@@ -108,10 +118,11 @@
     },
 
     "network": {
-        "format-ethernet": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> {ipaddr}",
+        // name on the bar, IP only on hover (screenshots end up everywhere)
+        "format-ethernet": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> {ifname}",
         "format-wifi": "<span alpha='55%' size='8pt' letter_spacing='1500'>WIFI</span> {essid}",
         "format-disconnected": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> @@t:offline@@",
-        "tooltip-format": "{ifname} · ↓ {bandwidthDownBytes} ↑ {bandwidthUpBytes}",
+        "tooltip-format": "{ifname} · {ipaddr} · ↓ {bandwidthDownBytes} ↑ {bandwidthUpBytes}",
         "interval": 5
     },
 
