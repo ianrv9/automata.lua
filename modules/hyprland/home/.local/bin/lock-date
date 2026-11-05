@@ -1,0 +1,12 @@
+#!/bin/bash
+# Text for hyprlock. Lives here because hyprlock's config chokes on fancier shell.
+#   lock-date           "MONDAY   02 · 11 · 2026" (in your language, if any locale for it exists)
+#   lock-date --title   "MYPC  ·  SESSION LOCKED"
+if [ "$1" = "--title" ]; then
+    echo "$(uname -n | tr '[:lower:]' '[:upper:]')  ·  @@t:locked@@"
+    exit
+fi
+# es_ES might not be generated but es_MX/es_DO/… might, any of them does the job
+want="@@t:locale@@"
+loc="$(locale -a 2>/dev/null | grep -m1 -i "^${want%%_*}_.*utf")"
+d=$(LC_TIME="${loc:-C}" date +"%A   %d · %m · %Y"); echo "${d^^}"

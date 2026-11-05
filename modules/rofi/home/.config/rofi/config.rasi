@@ -1,0 +1,97 @@
+/* Launcher. Colors: colors.rasi (matugen). */
+configuration {
+    modi: "drun,run,window";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    display-drun: "@@t:apps@@";
+    display-run: "@@t:run@@";
+    display-window: "@@t:windows@@";
+    drun-display-format: "{name}";
+    disable-history: false;
+    hover-select: true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
+}
+
+@import "colors.rasi"
+
+* {
+    font: "@@FONT_UI@@ Medium 12";
+    background-color: transparent;
+    text-color: @text;
+}
+
+window {
+    location: center;
+    width: 640px;
+    background-color: @bg;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 3px;
+    padding: 0;
+}
+
+mainbox { spacing: 0; children: [ inputbar, listview, mode-switcher ]; }
+
+inputbar {
+    text-color: @text;
+    padding: 18px 20px;
+    spacing: 14px;
+    background-color: @surface;
+    border: 0 0 1px 0;
+    border-color: @border;
+    children: [ prompt, entry ];
+}
+prompt {
+    font: "@@FONT_MONO@@ Bold 10";
+    text-color: @accent;
+    vertical-align: 0.5;
+}
+entry {
+    text-color: @text;
+    placeholder: "@@t:type_to_search@@";
+    placeholder-color: @dim;
+    cursor-color: @accent;
+    vertical-align: 0.5;
+}
+
+/* rofi's default theme paints these its own blue, so be explicit */
+textbox { text-color: @text; }
+
+listview {
+    lines: 8;
+    columns: 1;
+    padding: 10px;
+    spacing: 4px;
+    fixed-height: true;
+    scrollbar: false;
+}
+
+element {
+    padding: 10px 14px;
+    spacing: 14px;
+    border: 0 0 0 2px;
+    border-color: transparent;
+    border-radius: 2px;
+}
+element normal.normal, element alternate.normal { background-color: transparent; text-color: @text; }
+element normal.active, element alternate.active { background-color: transparent; text-color: @accent2; }
+element-text, element-icon { text-color: inherit; }
+element selected.normal {
+    background-color: @surface;
+    border-color: @accent;
+}
+element-icon { size: 26px; vertical-align: 0.5; }
+element-text { vertical-align: 0.5; }
+element selected.normal element-text { text-color: @accent; }
+
+mode-switcher {
+    border: 1px 0 0 0;
+    border-color: @border;
+}
+button {
+    padding: 10px;
+    font: "@@FONT_MONO@@ 9";
+    text-color: @dim;
+}
+button selected { text-color: @accent; background-color: @surface; }

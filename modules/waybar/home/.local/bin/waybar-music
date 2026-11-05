@@ -1,0 +1,11 @@
+#!/bin/bash
+# Music for waybar. Waybar's own mpris module kept crashing the whole bar,
+# this way only this script dies and waybar restarts it (restart-interval).
+playerctl --follow metadata --format $'{{status}}\t{{artist}} - {{title}}' 2>/dev/null |
+while IFS=$'\t' read -r status text; do
+    case "$status" in
+        Playing) echo "▶ $text" ;;
+        Paused)  echo "⏸ $text" ;;
+        *)       echo "" ;;
+    esac
+done

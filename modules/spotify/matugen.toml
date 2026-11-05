@@ -1,0 +1,8 @@
+# color.ini for "spicetify apply" + a JSON inside Spotify that theme.js re-reads every 2 s
+[templates.spicetify]
+input_path = "~/.config/matugen/templates/spicetify.ini"
+output_path = "~/.config/spicetify/Themes/automata/color.ini"
+
+[templates.spicetify_live]
+input_path = "~/.config/matugen/templates/spicetify-live.json"
+output_path = "@@SPOTIFY@@/Apps/xpui/automata-colors.json"

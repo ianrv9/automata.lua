@@ -1,0 +1,3 @@
+[templates.obsidian]
+input_path = "~/.config/matugen/templates/obsidian.css"
+output_path = "@@VAULT@@/.obsidian/snippets/automata.css"

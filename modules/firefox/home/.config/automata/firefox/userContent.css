@@ -1,0 +1,102 @@
+/* New tab / home page with your desktop wallpaper.
+   wallpaper.jpg comes from change-wallpaper (a frame, if your wallpaper is a video). */
+@import url("colors.css");
+
+@-moz-document url("about:home"), url("about:newtab") {
+  /* wallpaper with a dark veil so text reads on any image */
+  body {
+    --newtab-wallpaper: none !important;
+    background:
+      linear-gradient(color-mix(in srgb, var(--hud-bg-low) 30%, transparent),
+                      color-mix(in srgb, var(--hud-bg-low) 55%, transparent)),
+      url("wallpaper.jpg") center / cover no-repeat fixed !important;
+    font-family: "@@FONT_UI@@", sans-serif !important;
+  }
+
+  /* Firefox logo swapped for a HUD-style label */
+  .logo-and-wordmark > * { display: none !important; }
+  .logo-and-wordmark::after {
+    content: "AUTOMATA  ·  @@t:browser@@";
+    font-family: "@@FONT_MONO@@", monospace;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    color: var(--hud-accent);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  }
+
+  /* search box (a <moz-urlbar> in Firefox 159): dark panel, frame, corner brackets */
+  .search-inner-wrapper moz-urlbar {
+    --toolbar-field-background-color: color-mix(in srgb, var(--hud-bg) 88%, transparent);
+    --toolbar-field-background-color-focus: var(--hud-surface);
+    --toolbar-field-text-color: var(--hud-text);
+    --toolbar-field-border-color: var(--hud-line);
+    --toolbar-field-border-color-focus: var(--hud-accent);
+    --smartbar-background-color: var(--hud-surface);
+    --smartbar-outline: none;
+  }
+  .search-inner-wrapper moz-urlbar .urlbar-background {
+    background-color: color-mix(in srgb, var(--hud-bg) 88%, transparent) !important;
+    background-image:
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)) !important;
+    background-repeat: no-repeat !important;
+    background-size: 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px !important;
+    background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom !important;
+    border: 2px solid var(--hud-line) !important;
+    border-radius: 3px !important;
+    outline: none !important;
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5) !important;
+  }
+  .search-inner-wrapper moz-urlbar:is([focused], [open]) .urlbar-background { border-color: var(--hud-accent) !important; }
+  .search-inner-wrapper moz-urlbar .urlbar-input { font-family: "@@FONT_UI@@", sans-serif !important; }
+
+  /* HUD frame on the 4 corners of the page */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 22px;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+      linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent));
+    background-repeat: no-repeat;
+    background-size: 34px 2px, 2px 34px, 34px 2px, 2px 34px, 34px 2px, 2px 34px, 34px 2px, 2px 34px;
+    background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom;
+    opacity: 0.7;
+  }
+
+  /* shortcuts: dark framed panels */
+  .top-site-outer .tile {
+    background-color: color-mix(in srgb, var(--hud-bg) 80%, transparent) !important;
+    border: 2px solid color-mix(in srgb, var(--hud-line) 70%, transparent) !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+  }
+  .top-site-outer:hover .tile { border-color: var(--hud-accent) !important; }
+  .top-site-outer .title {
+    color: var(--hud-text) !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    font-weight: 500 !important;
+  }
+
+  /* customize button in the accent */
+  .personalize-button { border-radius: 3px !important; }
+}
+
+/* internal pages (settings, add-ons, new tab): Firefox's purple becomes the wallpaper accent.
+   Only read on startup */
+@-moz-document url-prefix("about:") {
+  :root {
+    --color-accent-primary: var(--hud-accent) !important;
+    --color-accent-primary-hover: color-mix(in srgb, var(--hud-accent) 85%, white) !important;
+    --color-accent-primary-active: color-mix(in srgb, var(--hud-accent) 75%, white) !important;
+    --button-text-color-primary: var(--hud-on-accent) !important;
+    --focus-outline-color: var(--hud-accent) !important;
+  }
+}

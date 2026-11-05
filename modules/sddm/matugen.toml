@@ -1,0 +1,3 @@
+[templates.sddm]
+input_path = "~/.config/matugen/templates/sddm.conf"
+output_path = "/usr/share/sddm/themes/automata/theme.conf.user"

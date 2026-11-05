@@ -1,0 +1,57 @@
+/* Wallpaper picker: a grid of thumbnails. */
+@import "colors.rasi"
+
+configuration { show-icons: true; }
+
+* {
+    font: "@@FONT_UI@@ Medium 11";
+    background-color: transparent;
+    text-color: @text;
+}
+
+window {
+    width: 1180px;
+    background-color: @bg;
+    border: 2px;
+    border-color: @accent;
+    border-radius: 4px;
+    padding: 22px;
+}
+
+mainbox { spacing: 18px; children: [ inputbar, listview ]; }
+
+inputbar {
+    spacing: 12px;
+    padding: 0 0 10px 0;
+    border: 0 0 1px 0;
+    border-color: @border;
+    children: [ prompt, entry ];
+}
+prompt { text-color: @accent; font: "@@FONT_MONO@@ Bold 11"; }
+entry { placeholder: "@@t:search@@"; placeholder-color: @dim; }
+
+listview {
+    columns: 4;
+    lines: 3;
+    spacing: 14px;
+    fixed-columns: true;
+    scrollbar: false;
+}
+
+element {
+    orientation: vertical;
+    padding: 8px;
+    spacing: 8px;
+    border: 2px;
+    border-color: transparent;
+    border-radius: 4px;
+    background-color: @surface;
+}
+element selected.normal { border-color: @accent; background-color: @surface; }
+element-icon { size: 150px; horizontal-align: 0.5; }
+element-text {
+    horizontal-align: 0.5;
+    font: "@@FONT_MONO@@ 9";
+    text-color: @dim;
+}
+element selected.normal element-text { text-color: @accent; }

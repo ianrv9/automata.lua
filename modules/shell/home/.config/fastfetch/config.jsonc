@@ -1,0 +1,28 @@
+// Colors come from the terminal, so they follow the wallpaper too.
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "small",
+        "padding": { "top": 1, "right": 3 }
+    },
+    "display": {
+        "separator": "  ",
+        "color": { "keys": "blue", "title": "magenta" },
+        "key": { "width": 11 }
+    },
+    "modules": [
+        { "type": "title", "format": "{user-name}@{host-name}" },
+        { "type": "custom", "format": "\u001b[90m────────────────────────────" },
+        { "type": "os",       "key": "@@t:ff_system@@" },
+        { "type": "kernel",   "key": "KERNEL" },
+        { "type": "uptime",   "key": "@@t:ff_uptime@@" },
+        { "type": "packages", "key": "@@t:ff_packages@@" },
+        { "type": "wm",       "key": "@@t:ff_desktop@@" },
+        { "type": "cpu",      "key": "CPU", "temp": true },
+        { "type": "gpu",      "key": "GPU", "temp": true },
+        { "type": "memory",   "key": "RAM" },
+        { "type": "disk",     "key": "@@t:ff_disk@@", "folders": "/" },
+        "break",
+        { "type": "colors", "symbol": "block" }
+    ]
+}

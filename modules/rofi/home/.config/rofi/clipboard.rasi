@@ -1,0 +1,5 @@
+@import "config.rasi"
+window { width: 720px; }
+mainbox { children: [ inputbar, listview ]; }
+element-text { font: "@@FONT_MONO@@ 10"; }
+element { children: [ element-text ]; }

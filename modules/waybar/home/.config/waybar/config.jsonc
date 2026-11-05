@@ -1,0 +1,128 @@
+// Colors: colors.css (matugen writes it). Looks: style.css. Position and texts come from `automata`.
+{
+    "layer": "top",
+    "position": "@@BAR_POSITION@@",
+    "height": 36,
+    "margin-@@BAR_POSITION@@": 8,
+    "margin-left": 14,
+    "margin-right": 14,
+    "spacing": 8,
+    "reload_style_on_change": true,
+
+    "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock", "custom/music"],
+    "modules-right": ["group/system", "group/audio", "network", "tray", "custom/power"],
+
+    "custom/launcher": {
+        "format": "\uf303",
+        "tooltip-format": "@@t:apps_tip@@",
+        "on-click": "rofi -show drun",
+        "on-click-right": "$HOME/.local/bin/change-wallpaper"
+    },
+
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "format-icons": {
+            "1": "01", "2": "02", "3": "03", "4": "04", "5": "05",
+            "6": "06", "7": "07", "8": "08", "9": "09", "10": "10",
+            "special": "◆"
+        },
+        "on-scroll-up": "hyprctl dispatch 'hl.dsp.focus({workspace = \"e+1\"})'",
+        "on-scroll-down": "hyprctl dispatch 'hl.dsp.focus({workspace = \"e-1\"})'"
+    },
+
+    "hyprland/window": {
+        "format": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:window@@</span>  {title}",
+        "max-length": 48,
+        "separate-outputs": true,
+        "rewrite": { "": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:ff_desktop@@</span>  @@t:empty@@" }
+    },
+
+    "clock": {
+        "format": "<b>{0:%H:%M}</b>  <span alpha='60%' size='9pt' letter_spacing='1200'>{0:L%a %d %b}</span>",
+        "tooltip-format": "<tt>{calendar}</tt>",
+        "calendar": {
+            "mode": "month",
+            "weeks-pos": "",
+            "format": {
+                "months": "<b>{}</b>",
+                "today": "<span underline='single'><b>{}</b></span>"
+            }
+        }
+    },
+
+    "custom/music": {
+        "exec": "$HOME/.local/bin/waybar-music",
+        "restart-interval": 5,
+        "format": "{}",
+        "max-length": 42,
+        "escape": true,
+        "on-click": "playerctl play-pause",
+        "on-click-right": "playerctl next",
+        "on-click-middle": "playerctl previous",
+        "tooltip": false
+    },
+
+    "group/system": {
+        "orientation": "horizontal",
+        "modules": ["cpu", "memory", "temperature"]
+    },
+    "cpu": {
+        "interval": 3,
+        "format": "<span alpha='55%' size='8pt' letter_spacing='1500'>CPU</span> {usage:>2}%",
+        "on-click": "@@TERMINAL@@ -e btop"
+    },
+    "memory": {
+        "interval": 5,
+        "format": "<span alpha='55%' size='8pt' letter_spacing='1500'>RAM</span> {percentage:>2}%",
+        "tooltip-format": "@@t:ram_tip@@",
+        "on-click": "@@TERMINAL@@ -e btop"
+    },
+    "temperature": {
+        "interval": 5,
+        "critical-threshold": 80,
+        "format": "<span alpha='55%' size='8pt' letter_spacing='1500'>TEMP</span> {temperatureC}°",
+        "format-critical": "<span alpha='75%' size='8pt' letter_spacing='1500'>TEMP</span> {temperatureC}° ▲"
+    },
+
+    "group/audio": {
+        "orientation": "horizontal",
+        "modules": ["pulseaudio", "pulseaudio#mic"]
+    },
+    "pulseaudio": {
+        "format": "<span alpha='55%' size='8pt' letter_spacing='1500'>VOL</span> {volume}%",
+        "format-muted": "<span alpha='55%' size='8pt' letter_spacing='1500'>VOL</span> —",
+        "scroll-step": 5,
+        "on-click": "pavucontrol",
+        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "tooltip-format": "{desc}"
+    },
+    "pulseaudio#mic": {
+        "format": "{format_source}",
+        "format-source": "<span alpha='55%' size='8pt' letter_spacing='1500'>MIC</span> {volume}%",
+        "format-source-muted": "<span alpha='55%' size='8pt' letter_spacing='1500'>MIC</span> —",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+        "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-",
+        "tooltip": false
+    },
+
+    "network": {
+        "format-ethernet": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> {ipaddr}",
+        "format-wifi": "<span alpha='55%' size='8pt' letter_spacing='1500'>WIFI</span> {essid}",
+        "format-disconnected": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> @@t:offline@@",
+        "tooltip-format": "{ifname} · ↓ {bandwidthDownBytes} ↑ {bandwidthUpBytes}",
+        "interval": 5
+    },
+
+    "tray": {
+        "icon-size": 15,
+        "spacing": 10
+    },
+
+    "custom/power": {
+        "format": "\u23fb",
+        "tooltip-format": "@@t:power_tip@@",
+        "on-click": "$HOME/.local/bin/power-menu"
+    }
+}

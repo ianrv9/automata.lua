@@ -1,0 +1,132 @@
+@import "colors.css";
+
+* {
+    font-family: "@@FONT_UI@@", "@@FONT_MONO@@", sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+}
+
+window#waybar {
+    background: transparent;
+    color: @text;
+}
+
+tooltip {
+    background: alpha(@bg, 0.95);
+    border: 2px solid @accent;
+    border-radius: 3px;
+}
+tooltip label { color: @text; font-family: "@@FONT_MONO@@"; }
+
+/* Every block is a see-through panel with corner brackets.
+   The brackets are 8 tiny gradients because GTK CSS has no ::before. yes, really */
+#custom-launcher,
+#workspaces,
+#window,
+#clock,
+#custom-music,
+#system,
+#audio,
+#network,
+#tray,
+#custom-power {
+    background-color: alpha(@bg, 0.72);
+    background-image:
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent),
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent),
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent),
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent);
+    background-repeat: no-repeat;
+    background-size:
+        10px 2px, 2px 10px,
+        10px 2px, 2px 10px,
+        10px 2px, 2px 10px,
+        10px 2px, 2px 10px;
+    background-position:
+        left top, left top,
+        right top, right top,
+        left bottom, left bottom,
+        right bottom, right bottom;
+    box-shadow: inset 0 0 0 2px alpha(@border, 0.40);
+    border-radius: 2px;
+    padding: 0 14px;
+    color: @text;
+}
+
+/* inside groups, modules don't get their own panel */
+#cpu, #memory, #temperature, #pulseaudio {
+    padding: 0 12px 0 0;
+}
+#cpu, #pulseaudio { padding-left: 0; }
+#temperature, #pulseaudio.mic { padding-right: 0; }
+#system, #audio { padding: 0 14px; }
+
+/* launcher + power buttons */
+#custom-launcher {
+    font-family: "@@FONT_MONO@@";
+    font-size: 16px;
+    color: @accent;
+    padding: 0 14px 0 12px;
+}
+#custom-power {
+    font-family: "@@FONT_MONO@@";
+    font-size: 14px;
+    color: @accent;
+    padding: 0 14px 0 13px;
+}
+#custom-launcher:hover, #custom-power:hover {
+    background-color: alpha(@accent, 0.18);
+}
+
+/* workspaces */
+#workspaces { padding: 0 4px; }
+#workspaces button {
+    font-family: "@@FONT_MONO@@";
+    font-size: 12px;
+    color: alpha(@dim, 0.55);
+    background: transparent;
+    padding: 0 8px;
+    margin: 6px 1px;
+    box-shadow: none;
+    transition: all 150ms ease;
+}
+#workspaces button:hover {
+    color: @text;
+    background: alpha(@accent, 0.10);
+}
+#workspaces button.active {
+    color: @accent;
+    font-weight: bold;
+    background: alpha(@accent, 0.14);
+    box-shadow: inset 0 -2px 0 @accent;
+}
+#workspaces button.urgent {
+    color: @error;
+    box-shadow: inset 0 -2px 0 @error;
+}
+#workspaces button.empty { color: alpha(@dim, 0.30); }
+
+/* active window */
+#window { color: @text; }
+window#waybar.empty #window { color: @dim; }
+
+/* clock, the center piece */
+#clock {
+    font-size: 14px;
+    color: @accent;
+    padding: 0 18px;
+}
+
+/* music */
+#custom-music { color: @text; }
+
+/* states */
+#temperature.critical { color: @error; }
+#pulseaudio.muted, #pulseaudio.source-muted { color: @dim; }
+#network.disconnected { color: @error; }
+
+#tray > .passive { -gtk-icon-effect: dim; }
+#tray > .needs-attention { -gtk-icon-effect: highlight; }

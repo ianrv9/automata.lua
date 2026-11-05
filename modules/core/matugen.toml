@@ -1,0 +1,3 @@
+[templates.palette]
+input_path = "~/.config/matugen/templates/palette.sh"
+output_path = "~/.config/automata/palette.sh"

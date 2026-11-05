@@ -1,0 +1,15 @@
+#!/bin/bash
+# Starts mpvpaper with the given wallpaper, or the last one you picked.
+
+WALL="${1:-$(cat "$HOME/.local/state/automata/wallpaper" 2>/dev/null)}"
+[ -f "$WALL" ] || exit 0
+
+pkill -x mpvpaper
+mkdir -p "$HOME/.cache/automata"
+
+OPTS="hwdec=auto-safe profile=fast no-audio loop image-display-duration=inf stop-screensaver=no"
+# Videos capped at 30 fps, your CPU says thanks. Not on images though: mpvpaper just quits
+[[ "${WALL,,}" =~ \.(mp4|mkv|webm|mov|gif)$ ]] && OPTS="vf=fps=30 $OPTS"
+
+# -p -a full: pauses when it can't be seen (fullscreen games and such)
+exec mpvpaper -p -a full -o "$OPTS" '*' "$WALL" > "$HOME/.cache/automata/mpvpaper.log" 2>&1

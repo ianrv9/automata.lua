@@ -1,0 +1,10 @@
+/* Small menus (power, clipboard). */
+@import "config.rasi"
+
+window { width: 360px; }
+mainbox { children: [ inputbar, listview ]; }
+inputbar { children: [ prompt ]; padding: 14px 18px; }
+listview { lines: 5; fixed-height: false; }
+element { padding: 11px 16px; }
+element-text { font: "@@FONT_UI@@ Medium 12"; }
+element { children: [ element-text ]; }

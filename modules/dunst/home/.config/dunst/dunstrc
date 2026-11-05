@@ -1,0 +1,54 @@
+# Colors are in dunstrc.d/50-colors.conf (matugen).
+[global]
+    monitor = 0
+    follow = mouse
+    origin = top-right
+    offset = (14, 54)
+    width = (280, 380)
+    height = (0, 220)
+    notification_limit = 5
+    gap_size = 8
+    padding = 14
+    horizontal_padding = 16
+    text_icon_padding = 14
+    frame_width = 2
+    corner_radius = 3
+    separator_height = 1
+    progress_bar = true
+    progress_bar_height = 4
+    progress_bar_frame_width = 0
+    progress_bar_corner_radius = 1
+
+    font = @@FONT_UI@@ Medium 11
+    markup = full
+    format = "<span size='8pt' letter_spacing='1500' alpha='60%'>%a</span>\n<b>%s</b>\n%b"
+    alignment = left
+    vertical_alignment = center
+    show_age_threshold = 60
+    ellipsize = end
+    ignore_newline = no
+    stack_duplicates = true
+    hide_duplicate_count = false
+    show_indicators = no
+
+    icon_theme = Papirus-Dark
+    enable_recursive_icon_lookup = true
+    icon_position = left
+    min_icon_size = 40
+    max_icon_size = 56
+
+    sticky_history = yes
+    history_length = 30
+    browser = /usr/bin/xdg-open
+    mouse_left_click = do_action, close_current
+    mouse_middle_click = close_all
+    mouse_right_click = close_current
+
+[urgency_low]
+    timeout = 4
+
+[urgency_normal]
+    timeout = 7
+
+[urgency_critical]
+    timeout = 0

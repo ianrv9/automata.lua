@@ -1,0 +1,10 @@
+[SddmGreeterTheme]
+Name=automata
+Description=Big clock, one password line, that's it
+Author=Calternar
+Type=sddm-theme
+Version=1.0
+Website=https://github.com/ianrv9/automata.lua
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6

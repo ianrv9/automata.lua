@@ -1,0 +1,83 @@
+#!/bin/bash
+# Sets a wallpaper (image or video) and repaints the whole desktop from it.
+#
+#   change-wallpaper            picker with thumbnails
+#   change-wallpaper <file>     that one, no questions
+#   change-wallpaper --colors   just repaint from the current one
+
+. "$HOME/.local/share/automata/defaults.conf" 2>/dev/null
+. "$HOME/.config/automata/settings.conf" 2>/dev/null
+
+CACHE="$HOME/.cache/automata"
+CURRENT="$HOME/.local/state/automata/wallpaper"
+mkdir -p "$CACHE/thumbs" "${CURRENT%/*}"
+
+is_video() { [[ "${1,,}" =~ \.(mp4|mkv|webm|mov)$ ]]; }
+
+# Cached thumbnail per path. Videos use second 1 because frame 0 is black way too often
+thumb() {
+    local t="$CACHE/thumbs/$(printf '%s' "$1" | md5sum | cut -c1-16).jpg"
+    if [ ! -s "$t" ]; then
+        if is_video "$1"; then
+            ffmpeg -nostdin -loglevel error -y -ss 1 -i "$1" -frames:v 1 -vf "scale=640:-2" "$t" \
+                || ffmpeg -nostdin -loglevel error -y -i "$1" -frames:v 1 -vf "scale=640:-2" "$t"
+        else
+            magick "$1[0]" -resize 640x "$t" 2>/dev/null
+        fi
+    fi
+    printf '%s' "$t"
+}
+
+# Firefox's new tab page shows the wallpaper too (only if that module is installed)
+firefox_bg() {
+    local out="$HOME/.config/automata/firefox/wallpaper.jpg"
+    [ -d "${out%/*}" ] || return 0
+    if is_video "$1"; then
+        ffmpeg -nostdin -loglevel error -y -ss 1 -i "$1" -frames:v 1 -vf "scale=1920:-2" -q:v 3 "$out"
+    else
+        magick "$1[0]" -resize "1920x1080^" -quality 90 "$out" 2>/dev/null
+    fi
+}
+
+repaint() {
+    hyprctl reload >/dev/null 2>&1
+    pkill -SIGUSR2 -x waybar
+}
+
+apply_colors() {
+    local t; t="$(thumb "$1")"
+    [ -s "$t" ] || { notify-send -u critical "@@t:wallpaper@@" "@@t:wp_cant_read@@ $(basename "$1")"; return 1; }
+    firefox_bg "$1" &
+    # the thumbnail is plenty for picking colors, and way faster than a 4K frame
+    matugen -t "$COLOR_SCHEME" image "$t" --source-color-index 0 -q
+    repaint
+}
+
+if [ "$1" = "--colors" ]; then
+    if [ -f "$(cat "$CURRENT" 2>/dev/null)" ]; then
+        apply_colors "$(cat "$CURRENT")"
+    else
+        matugen -t "$COLOR_SCHEME" color hex "$BASE_COLOR" -q && repaint     # no wallpaper yet
+    fi
+    exit
+fi
+
+PICK="$1"
+if [ -z "$PICK" ]; then
+    [ -d "$WALLPAPER_DIR" ] || { notify-send -u critical "@@t:wallpaper@@" "@@t:wp_no_dir@@ $WALLPAPER_DIR (@@t:wp_no_dir_hint@@)"; exit 1; }
+    mapfile -t FILES < <(find -L "$WALLPAPER_DIR" -type f -iregex '.*\.\(jpg\|jpeg\|png\|webp\|gif\|mp4\|mkv\|webm\|mov\)' | sort)
+    [ ${#FILES[@]} -gt 0 ] || { notify-send "@@t:wallpaper@@" "@@t:wp_empty@@ $WALLPAPER_DIR"; exit 1; }
+    # rofi's "\0icon\x1f" trick: each row gets its thumbnail as icon
+    CHOSEN=$(for f in "${FILES[@]}"; do
+        printf '%s\0icon\x1f%s\n' "$(basename "$f")" "$(thumb "$f")"
+    done | rofi -dmenu -i -show-icons -format i -p "@@t:wallpaper@@" -theme "$HOME/.config/rofi/wallpapers.rasi" 2>/dev/null)
+    [ -n "$CHOSEN" ] || exit 0
+    PICK="${FILES[$CHOSEN]}"
+fi
+
+[ -f "$PICK" ] || { notify-send -u critical "@@t:wallpaper@@" "@@t:wp_missing@@ $PICK"; exit 1; }
+
+printf '%s\n' "$PICK" > "$CURRENT"
+setsid -f "$HOME/.local/bin/start-wallpaper" "$PICK" >/dev/null 2>&1
+apply_colors "$PICK"
+notify-send -i "$(thumb "$PICK")" "@@t:wp_applied@@" "$(basename "$PICK")"

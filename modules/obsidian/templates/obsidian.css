@@ -1,0 +1,173 @@
+/* automata for Obsidian: corner brackets, Space Grotesk, wallpaper colors.
+   matugen rewrites this on every wallpaper change and Obsidian reloads snippets by itself.
+   Turn it on: Settings → Appearance → CSS snippets → automata */
+
+body.theme-dark, body.theme-light {
+  /* wallpaper palette, same roles as waybar, rofi and Discord */
+  --hud-accent:  {{colors.primary.default.hex}};
+  --hud-accent2: {{colors.tertiary.default.hex}};
+  --hud-line:   {{colors.outline_variant.default.hex}};
+
+  --background-primary:          {{colors.surface.default.hex}};
+  --background-primary-alt:      {{colors.surface_container_low.default.hex}};
+  --background-secondary:        {{colors.surface_container_lowest.default.hex}};
+  --background-secondary-alt:    {{colors.surface_container.default.hex}};
+  --background-modifier-border:  {{colors.outline_variant.default.hex}};
+  --background-modifier-border-hover: color-mix(in srgb, var(--hud-accent) 50%, transparent);
+  --background-modifier-border-focus: var(--hud-accent);
+  --background-modifier-hover:   color-mix(in srgb, var(--hud-accent) 9%, transparent);
+  --background-modifier-active-hover: color-mix(in srgb, var(--hud-accent) 16%, transparent);
+  --background-modifier-form-field: {{colors.surface_container_low.default.hex}};
+  --titlebar-background:         {{colors.surface_container_lowest.default.hex}};
+  --titlebar-background-focused: {{colors.surface_container_lowest.default.hex}};
+  --ribbon-background:           {{colors.surface_container_lowest.default.hex}};
+  --tab-container-background:    {{colors.surface_container_lowest.default.hex}};
+  --modal-background:            {{colors.surface_container.default.hex}};
+
+  --text-normal:  {{colors.on_surface.default.hex}};
+  --text-muted:   {{colors.on_surface_variant.default.hex}};
+  --text-faint:   {{colors.outline.default.hex}};
+  --text-on-accent: {{colors.on_primary.default.hex}};
+  --text-accent:  var(--hud-accent) !important;
+  --text-accent-hover: var(--hud-accent2) !important;
+  --text-selection: color-mix(in srgb, var(--hud-accent) 30%, transparent);
+
+  /* the accent you pick in Obsidian's settings gets ignored, the wallpaper wins */
+  --color-accent: var(--hud-accent) !important;
+  --color-accent-1: var(--hud-accent) !important;
+  --color-accent-2: var(--hud-accent2) !important;
+  --interactive-accent: var(--hud-accent) !important;
+  --interactive-accent-hover: var(--hud-accent2) !important;
+  --link-color: var(--hud-accent);
+  --link-external-color: var(--hud-accent2);
+  --link-unresolved-color: {{colors.outline.default.hex}};
+
+  /* desktop font, no thin weights */
+  --font-interface: "@@FONT_UI@@", sans-serif !important;
+  --font-text: "@@FONT_UI@@", sans-serif !important;
+  --font-monospace: "@@FONT_MONO@@", monospace !important;
+  --font-normal: 500;
+  --font-weight: 500;
+  --bold-weight: 700;
+
+  /* headings: accent, fading by importance */
+  --h1-color: var(--hud-accent);
+  --h2-color: color-mix(in srgb, var(--hud-accent) 75%, var(--text-normal));
+  --h3-color: color-mix(in srgb, var(--hud-accent2) 70%, var(--text-normal));
+  --h4-color: var(--text-normal);
+  --h1-weight: 700;
+  --h2-weight: 700;
+  --h3-weight: 600;
+
+  /* almost-square 2 px borders, like Hyprland's windows */
+  --radius-s: 2px;
+  --radius-m: 3px;
+  --radius-l: 4px;
+  --radius-xl: 4px;
+  --tab-radius-active: 3px 3px 0 0;
+  --border-width: 2px;
+
+  --code-background: {{colors.surface_container_low.default.hex}};
+  --code-normal: {{colors.on_surface.default.hex}};
+  --blockquote-border-color: var(--hud-accent);
+  --blockquote-border-thickness: 2px;
+  --hr-color: var(--hud-line);
+  --checkbox-color: var(--hud-accent);
+  --checkbox-border-color: var(--hud-line);
+  --tag-color: var(--hud-accent);
+  --tag-background: color-mix(in srgb, var(--hud-accent) 12%, transparent);
+  --tag-border-color: color-mix(in srgb, var(--hud-accent) 35%, transparent);
+  --tag-border-width: 1px;
+  --nav-item-color-active: var(--hud-accent);
+  --nav-item-background-active: color-mix(in srgb, var(--hud-accent) 14%, transparent);
+  --divider-color: var(--hud-line);
+  --divider-width: 2px;
+}
+
+/* ---------- corner brackets on panels (like the bar and Discord) ---------- */
+.workspace-split.mod-root .workspace-leaf-content,
+.workspace-split.mod-left-split .workspace-leaf-content,
+.workspace-split.mod-right-split .workspace-leaf-content,
+.modal,
+.prompt,
+.menu {
+  background-image:
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent));
+  background-repeat: no-repeat;
+  background-size: 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px;
+  background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom;
+}
+.modal, .prompt, .menu {
+  border: 2px solid color-mix(in srgb, var(--hud-accent) 40%, transparent) !important;
+  border-radius: 3px !important;
+}
+
+/* ---------- tabs: active one gets an accent bar underneath ---------- */
+.workspace-tab-header.is-active {
+  box-shadow: inset 0 -2px 0 var(--hud-accent) !important;
+}
+.workspace-tab-header.is-active .workspace-tab-header-inner-title { color: var(--hud-accent); }
+.workspace-tab-header-inner-title { font-weight: 500; }
+
+/* ---------- file explorer: HUD-style folders, open note with an accent bar ---------- */
+.nav-folder-title-content {
+  font-family: "@@FONT_MONO@@", monospace;
+  font-size: 0.82em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--hud-accent) 70%, var(--text-muted));
+}
+.nav-file-title.is-active,
+.tree-item-self.is-active {
+  box-shadow: inset 2px 0 0 var(--hud-accent);
+  color: var(--hud-accent) !important;
+}
+.nav-files-container .tree-item-children { border-inline-start-color: var(--hud-line); }
+
+/* vault name bottom-left, as a little label */
+.workspace-sidedock-vault-profile .workspace-drawer-vault-name {
+  font-family: "@@FONT_MONO@@", monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hud-accent);
+}
+
+/* ---------- notes ---------- */
+.inline-title { color: var(--hud-accent); letter-spacing: -0.01em; }
+/* accent line under H1 and H2 */
+.markdown-rendered h1, .HyperMD-header-1,
+.markdown-rendered h2, .HyperMD-header-2 {
+  border-bottom: 2px solid color-mix(in srgb, var(--hud-accent) 30%, transparent);
+  padding-bottom: 0.15em;
+}
+/* code blocks: framed, language label in the accent */
+.markdown-rendered pre, .HyperMD-codeblock-bg {
+  border-inline-start: 2px solid var(--hud-accent) !important;
+}
+.markdown-rendered pre { border-radius: 3px; }
+.code-block-flair { color: var(--hud-accent); font-family: "@@FONT_MONO@@", monospace; letter-spacing: 0.08em; }
+/* inline code */
+.markdown-rendered code, .cm-inline-code {
+  color: var(--hud-accent2) !important;
+}
+/* line numbers in dim mono */
+.cm-gutters { font-family: "@@FONT_MONO@@", monospace; }
+
+/* ---------- status bar + scrollbars ---------- */
+.status-bar {
+  font-family: "@@FONT_MONO@@", monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border: 2px solid var(--hud-line) !important;
+  border-radius: 3px 0 0 0 !important;
+  background-color: var(--background-secondary) !important;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--hud-accent) 30%, transparent) !important;
+  border-radius: 0 !important;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--hud-accent) !important; }

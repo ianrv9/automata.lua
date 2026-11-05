@@ -1,0 +1,452 @@
+#!/usr/bin/env bash
+# automata: installer + settings menu, same program.
+#
+#   automata               settings menu
+#   automata install       install (what ./install runs)
+#   automata apply         re-render everything from settings.conf and reload
+#   automata uninstall     put your old files back
+#
+# Flags: --dry-run (only show what would happen), --yes (defaults, no questions),
+#        --modules a,b (skip the module picker)
+
+set -uo pipefail
+
+# Where the rest of the repo lives: next to this script (clone) or ~/.local/share/automata (installed)
+SRC="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+. "$SRC/lib/core.sh"
+. "$SRC/lib/ui.sh"
+
+DRY_RUN=0 AUTO_YES=0 PICKED="" CMD="menu"
+SESSION="$(date +%Y%m%d-%H%M%S)"
+
+# ── setup questions (shared by the installer and the menu) ──
+# Each question is a function that returns 0 = answered, 1 = go back (Esc), 2 = doesn't apply here.
+# wizard() walks a list of them and handles going back and forth.
+
+ask_language() {
+    local def="en"; [[ "${LANG:-}" == es* ]] && def="es"
+    [ -f "$SETTINGS" ] && def="$LANGUAGE"
+    LANGUAGE="$(ui_choose "Language / Idioma" "$def" "en|English" "es|Español")" || LANGUAGE="$def"
+    load_lang "$LANGUAGE"
+}
+
+wizard() {      # wizard q_one q_two … -> 1 if you backed out of the first one
+    local -a qs=("$@"); local i=0 dir=1 r
+    while [ "$i" -lt "${#qs[@]}" ]; do
+        [ "$i" -lt 0 ] && return 1
+        "${qs[$i]}"; r=$?
+        case "$r" in
+            0) dir=1 ;;
+            1) dir=-1 ;;
+        esac                       # 2 (skip) keeps going the same way
+        i=$((i + dir))
+        [ "$i" -lt 0 ] && return 1
+    done
+    return 0
+}
+
+# Which step header is showing, so going back doesn't print it twice
+CUR_STEP=""
+in_step() {     # in_step N "TITLE"
+    [ "$CUR_STEP" = "$1" ] && return
+    CUR_STEP="$1"; UI_STEP=$(($1 - 1)); ui_step "$2"
+    [ "$1" = 2 ] && ui_info "${T[back_hint]}"
+}
+
+# yes/no as a menu, so Esc means "back" instead of "no"
+yes_no() {      # yes_no "question" yes|no -> prints yes|no
+    ui_choose "$1" "$2" "yes|${T[yes]}" "no|${T[no]}"
+}
+
+custom_only() { [ "${SETUP_MODE:-custom}" = custom ] || return 2; }
+
+q_modules() {
+    in_step 2 "${T[step_modules]}"
+    [ -n "$PICKED" ] && { MODS="$(modules_resolve "$PICKED" | xargs)"; return 2; }
+    local picked; picked="$(pick_modules)" || return 1
+    MODS="$(modules_resolve "$picked" | xargs)"
+    [ -n "$MODS" ] || { ui_warn "${T[nothing_picked]}"; return 1; }
+    ui_ok "$MODS"
+}
+
+q_mode() {
+    in_step 3 "${T[step_setup]}"
+    SETUP_MODE="$(ui_choose "${T[mode_question]}" "${SETUP_MODE:-quick}" "quick|${T[mode_quick]}" "custom|${T[mode_custom]}")" || return 1
+}
+
+# Apps: this only decides what opens with Super+Q / E / B. The ✦ ones get themed by a module
+q_terminal() {
+    custom_only || return 2
+    local v; v="$(ui_choose "${T[q_terminal]}" "$TERMINAL" "kitty|kitty  ✦ ${T[themed]}" \
+        "foot|foot" "alacritty|alacritty" "wezterm|wezterm" "ghostty|ghostty" "other|${T[other]}")" || return 1
+    [ "$v" = other ] && { v="$(ui_input "${T[q_command]}" "$TERMINAL")" || return 1; }
+    TERMINAL="$v"
+}
+q_files() {
+    custom_only || return 2
+    local v; v="$(ui_choose "${T[q_files]}" "$FILE_MANAGER" "thunar|thunar  ✦ GTK" "nautilus|nautilus  ✦ GTK" \
+        "nemo|nemo  ✦ GTK" "pcmanfm|pcmanfm  ✦ GTK" "dolphin|dolphin" "yazi|yazi  (${T[in_terminal]})" "other|${T[other]}")" || return 1
+    case "$v" in
+        yazi)  v="$TERMINAL -e yazi" ;;
+        other) v="$(ui_input "${T[q_command]}" "$FILE_MANAGER")" || return 1 ;;
+    esac
+    FILE_MANAGER="$v"
+}
+q_browser() {
+    custom_only || return 2
+    local v; v="$(ui_choose "${T[q_browser]}" "$BROWSER" "firefox|firefox  ✦ ${T[themed]}" \
+        "librewolf|librewolf" "zen-browser|zen" "chromium|chromium" "brave|brave" "other|${T[other]}")" || return 1
+    [ "$v" = other ] && { v="$(ui_input "${T[q_command]}" "$BROWSER")" || return 1; }
+    BROWSER="$v"
+}
+
+q_keyboard() {
+    custom_only || return 2
+    local k
+    k="$(ui_choose "${T[q_keyboard]}" "$KB_LAYOUT" "us|us · English (US)" "latam|latam · Español (Latinoamérica)" \
+        "es|es · Español (España)" "us-intl|us intl · English (international, dead keys)" "gb|gb · English (UK)" "other|${T[other]}")" || return 1
+    case "$k" in
+        us-intl) KB_LAYOUT="us"; KB_VARIANT="intl" ;;
+        other)   KB_LAYOUT="$(ui_input "${T[q_keyboard_other]}" "$KB_LAYOUT")" || return 1; KB_VARIANT="" ;;
+        *)       KB_LAYOUT="$k"; KB_VARIANT="" ;;
+    esac
+}
+
+q_wallpapers() {
+    local v; v="$(ui_input "${T[q_wallpapers]}" "${WALLPAPER_DIR/\$HOME/$HOME}")" || return 1
+    WALLPAPER_DIR="${v/#\~/$HOME}"
+    if [ ! -d "$WALLPAPER_DIR" ] && [ "$DRY_RUN" = 0 ] && ui_confirm "${T[q_wallpapers_create]}"; then
+        mkdir -p "$WALLPAPER_DIR"
+    fi
+}
+
+q_scheme() {
+    COLOR_SCHEME="$(ui_choose "${T[q_colors]}" "$COLOR_SCHEME" \
+        "scheme-content|${T[scheme_content]}" "scheme-tonal-spot|${T[scheme_tonal]}" \
+        "scheme-vibrant|${T[scheme_vibrant]}" "scheme-expressive|${T[scheme_expressive]}" \
+        "scheme-monochrome|${T[scheme_mono]}")" || return 1
+}
+
+q_look() {
+    custom_only || return 2
+    local preset; preset="$(ui_choose "${T[q_look]}" "${LOOK:-hud}" "hud|${T[look_hud]}" "compact|${T[look_compact]}" "flat|${T[look_flat]}")" || return 1
+    LOOK="$preset"
+    case "$preset" in
+        hud)     GAPS_IN=6 GAPS_OUT=14 BORDER_SIZE=2 ROUNDING=4 BLUR=yes INACTIVE_OPACITY=0.94 ;;
+        compact) GAPS_IN=3 GAPS_OUT=6  BORDER_SIZE=2 ROUNDING=4 BLUR=yes INACTIVE_OPACITY=0.96 ;;
+        flat)    GAPS_IN=0 GAPS_OUT=0  BORDER_SIZE=1 ROUNDING=0 BLUR=no  INACTIVE_OPACITY=1.0 ;;
+    esac
+}
+q_animations() {
+    custom_only || return 2
+    ANIMATIONS="$(ui_choose "${T[q_animations]}" "$ANIMATIONS" "fast|${T[anim_fast]}" "relaxed|${T[anim_relaxed]}" "off|${T[anim_off]}")" || return 1
+}
+q_tune() {
+    custom_only || return 2
+    TUNE="$(yes_no "${T[q_tune]}" "${TUNE:-no}")" || return 1
+}
+
+ask_number() {  # ask_number VAR "question" -> 1 on Esc
+    local r; r="$(ui_input "$2" "${!1}")" || return 1
+    if [[ "$r" =~ ^[0-9]+([.][0-9]+)?$ ]]; then printf -v "$1" '%s' "$r"; else ui_warn "${T[bad_number]}"; fi
+}
+tuning() { custom_only || return 2; [ "${TUNE:-yes}" = yes ] || return 2; }
+q_gaps_in()  { tuning || return 2; ask_number GAPS_IN "${T[q_gaps_in]}"; }
+q_gaps_out() { tuning || return 2; ask_number GAPS_OUT "${T[q_gaps_out]}"; }
+q_border()   { tuning || return 2; ask_number BORDER_SIZE "${T[q_border]}"; }
+q_rounding() { tuning || return 2; ask_number ROUNDING "${T[q_rounding]}"; }
+q_opacity()  { tuning || return 2; ask_number INACTIVE_OPACITY "${T[q_opacity]}"; }
+q_blur()     { tuning || return 2; BLUR="$(yes_no "${T[q_blur]}" "$BLUR")" || return 1; }
+
+q_bar()       { custom_only || return 2; BAR_POSITION="$(ui_choose "${T[q_bar]}" "$BAR_POSITION" "top|${T[bar_top]}" "bottom|${T[bar_bottom]}")" || return 1; }
+q_lock()      { custom_only || return 2; ask_number LOCK_AFTER "${T[q_lock]}"; }
+q_screen()    { custom_only || return 2; ask_number SCREEN_OFF_AFTER "${T[q_screen]}"; }
+q_font_ui()   { custom_only || return 2; FONT_UI="$(ui_input "${T[q_font_ui]}" "$FONT_UI")" || return 1; }
+q_font_mono() { custom_only || return 2; FONT_MONO="$(ui_input "${T[q_font_mono]}" "$FONT_MONO")" || return 1; }
+
+# Paths some modules need. Empty = that module gets skipped
+q_vault() {
+    grep -qw obsidian <<<"$MODS" || return 2
+    local v; v="$(ui_input "${T[q_vault]}" "${OBSIDIAN_VAULT:-$(find_vault)}")" || return 1
+    OBSIDIAN_VAULT="${v/#\~/$HOME}"
+    if [ -d "$OBSIDIAN_VAULT/.obsidian" ]; then ui_ok "${T[vault_ok]} ${OBSIDIAN_VAULT/#$HOME/\~}"
+    else ui_warn "${T[vault_bad]}"; OBSIDIAN_VAULT=""; fi
+}
+
+# Not a question, but it lives with them: Spotify's folder has to be writable
+check_spotify() {
+    grep -qw spotify <<<"$1" || return 0
+    SPOTIFY_PATH="$(find_spotify)"
+    if [ -z "$SPOTIFY_PATH" ]; then ui_warn "${T[spotify_none]}"
+    elif [ ! -w "$SPOTIFY_PATH" ] || [ ! -w "$SPOTIFY_PATH/Apps" ]; then
+        run_sudo "${T[spotify_perm]}" chmod a+wr -R "$SPOTIFY_PATH" || SPOTIFY_PATH=""
+    else ui_ok "${T[spotify_ok]} $SPOTIFY_PATH"; fi
+}
+
+SETUP_QUESTIONS=(q_modules q_mode q_terminal q_files q_browser q_keyboard q_wallpapers q_scheme
+    q_look q_animations q_tune q_gaps_in q_gaps_out q_border q_rounding q_opacity q_blur
+    q_bar q_lock q_screen q_font_ui q_font_mono q_vault)
+
+# ── pieces of the install ─────────────────────
+pick_modules() {
+    local opts=() m
+    for m in $(modules_all); do
+        [ "$(module_get "$m" ALWAYS)" = 1 ] && continue      # core: not optional, not shown
+        local on=0; module_default "$m" && on=1
+        opts+=("$m|$(printf '%-9s %s' "$(module_get "$m" NAME)" "$(module_get "$m" DESC)")|$on")
+    done
+    local out; out="$(ui_multi "${T[pick_modules]}" "${opts[@]}")" || return 1
+    xargs <<<"$out"
+}
+
+check_system() {
+    if command -v pacman >/dev/null; then ui_ok "${T[arch_ok]}"; else ui_warn "${T[arch_no]}"; fi
+    local v; v="$(hypr_version)"
+    if [ -z "$v" ]; then ui_warn "${T[hypr_missing]}"
+    elif version_ge "$v" "$HYPR_MIN"; then ui_ok "${T[hypr_ok]} $v"
+    else ui_warn "${T[hypr_old]} ($v)"; fi
+}
+
+install_packages() {
+    local repo="" aur="" m h
+    for m in $1; do repo+=" $(module_get "$m" PACKAGES)"; aur+=" $(module_get "$m" AUR)"; done
+    repo="$(missing_pkgs "$(tr ' ' '\n' <<<"$repo" | sort -u | xargs)")"
+    aur="$(missing_pkgs "$(tr ' ' '\n' <<<"$aur" | sort -u | xargs)")"
+    if [ -z "$repo$aur" ]; then ui_ok "${T[pkg_all]}"; return; fi
+    [ -n "$repo" ] && ui_warn "${T[pkg_missing]} $repo"
+    [ -n "$aur" ]  && ui_warn "${T[pkg_aur]} $aur"
+
+    h="$(aur_helper)"
+    local all; all="$(xargs <<<"$repo $aur")"
+    if [ -n "$h" ]; then
+        # paru/yay handle both repo and AUR, and ask for sudo themselves
+        ui_info "${T[pkg_ask]}"; ui_cmd "$h -S --needed $all"
+        [ "$DRY_RUN" = 1 ] && return
+        if ui_confirm "${T[plan_go]}"; then $h -S --needed $all || ui_warn "${T[pkg_fail]}"
+        else ui_info "${T[pkg_later]} $h -S --needed $all"; fi
+    else
+        [ -n "$repo" ] && { run_sudo "${T[pkg_ask]}" pacman -S --needed $repo || ui_warn "${T[pkg_fail]}"; }
+        [ -n "$aur" ] && ui_warn "${T[pkg_no_helper]}"
+    fi
+}
+
+# Copies the repo to ~/.local/share/automata and links the `automata` command
+self_install() {
+    [ "$SRC" = "$SHARE" ] && return
+    rm -rf "$SHARE.new"; mkdir -p "$SHARE.new" "$HOME/.local/bin"
+    cp -r "$SRC"/{bin,lib,lang,modules,defaults.conf} "$SHARE.new"/
+    rm -rf "$SHARE"; mv "$SHARE.new" "$SHARE"
+    ln -sfn "$SHARE/bin/automata" "$HOME/.local/bin/automata"
+}
+
+save_module_list() {    # save_module_list "mod mod…"
+    mkdir -p "$CONF"; tr ' ' '\n' <<<"$1" | grep -v '^$' | sort -u > "$CONF/modules"
+}
+
+# Render + place + colors + reload. The heart of `automata apply`.
+apply_all() {
+    local mods="${1:-$(modules_installed | xargs)}" m
+    build_render
+    PLACED=0 BACKED=0
+    for m in $mods; do place_module "$m"; done
+    build_matugen "$mods"
+    [ "$DRY_RUN" = 1 ] && return
+    "$HOME/.local/bin/change-wallpaper" --colors >/dev/null 2>&1
+    reload_desktop
+}
+
+run_post() {    # post.sh can use everything here: ui_*, T[], run_sudo, settings…
+    local m
+    for m in $1; do
+        [ -f "$SRC/modules/$m/post.sh" ] || continue
+        [ "$DRY_RUN" = 1 ] && { ui_info "$(module_get "$m" NAME): post.sh"; continue; }
+        . "$SRC/modules/$m/post.sh"
+    done
+}
+
+# ── commands ─────────────────────────────────
+cmd_install() {
+    load_settings
+    [ -f "$SETTINGS" ] || ask_language
+    ui_banner "install"
+    ui_text "${T[hello]}"
+    ui_info "${T[hello_2]}"
+    [ "$DRY_RUN" = 1 ] && ui_warn "${T[dry_banner]}"
+
+    # gum first, so the rest looks nice
+    if [ "$USE_GUM" = 0 ] && [ -t 0 ] && command -v pacman >/dev/null && [ "$AUTO_YES" = 0 ]; then
+        if ui_confirm "${T[gum_ask]}"; then
+            if [ "$DRY_RUN" = 1 ]; then ui_cmd "sudo pacman -S --needed gum"
+            else ui_cmd "sudo pacman -S --needed gum"; sudo pacman -S --needed gum && USE_GUM=1; fi
+        else ui_info "${T[gum_plain]}"; fi
+    fi
+
+    UI_STEPS=8
+    ui_step "${T[step_system]}";  check_system
+
+    # Grab the keyboard layout you already use, so "quick" doesn't break your typing
+    if [ ! -f "$SETTINGS" ]; then
+        local kb; kb="$(localectl status 2>/dev/null | awk -F': ' '/X11 Layout/{print $2}' | cut -d, -f1)"
+        [ -n "$kb" ] && KB_LAYOUT="$kb"
+    fi
+    # Esc on the very first question = you're out
+    wizard "${SETUP_QUESTIONS[@]}" || exit 0
+    check_spotify "$MODS"
+
+    UI_STEP=3; ui_step "${T[step_packages]}"; install_packages "$MODS"
+
+    ui_step "${T[step_plan]}"
+    ui_info "${T[plan_modules]}: $MODS"
+    DRY_RUN_SAVED=$DRY_RUN; DRY_RUN=1
+    local preview; preview="$(apply_all "$MODS" 2>&1)"
+    DRY_RUN=$DRY_RUN_SAVED
+    local n_backup; n_backup="$(grep -c "(${T[backup_will]})" <<<"$preview" || true)"
+    if [ "$DRY_RUN" = 1 ]; then printf '%s\n' "$preview"
+    elif [ "$n_backup" -gt 0 ]; then
+        ui_info "$n_backup ${T[plan_replace]}"
+        grep "(${T[backup_will]})" <<<"$preview" | head -12
+    fi
+    if [ "$DRY_RUN" = 1 ]; then ui_ok "${T[dry_done]}"; exit 0; fi
+    ui_confirm "${T[plan_go]}" || exit 0
+
+    ui_step "${T[step_install]}"
+    self_install
+    save_settings
+    save_module_list "$(modules_installed | xargs) $MODS"
+    apply_all "$(modules_installed | xargs)"
+    ui_ok "$PLACED ${T[files]}"
+    [ "$BACKED" -gt 0 ] && ui_info "$BACKED ${T[backup_saved]} → ${STATE/#$HOME/\~}/backups/$SESSION"
+    ui_ok "${T[colors_done]}"
+
+    ui_step "${T[step_extras]}"; run_post "$MODS"
+
+    ui_step "${T[step_done]}"
+    ui_ok "${T[done_1]}"
+    ui_info "${T[done_2]}"
+    ui_info "${T[done_3]}"
+    ui_info "${T[done_4]}"
+    echo
+}
+
+cmd_apply() {
+    load_settings
+    apply_all
+    ui_ok "${T[saved]}"
+}
+
+# Takes a module out: its files go away (or back to your old version)
+remove_module() {
+    local m="$1" dir="$SRC/modules/$1" f dst
+    while IFS= read -r -d '' f; do
+        case "$f" in
+            "$dir/home/"*)      dst="$HOME/${f#"$dir/home/"}" ;;
+            "$dir/templates/"*) dst="$HOME/.config/matugen/templates/$(basename "$f")" ;;
+            *) continue ;;
+        esac
+        restore_file "$dst"
+    done < <(find "$dir" -type f -print0)
+}
+
+# Deletes one of our files and puts yours back if there was one
+restore_file() {
+    local dst="$1" backup
+    is_managed "$dst" || return 0
+    rm -f "$dst"
+    backup="$(awk -F'\t' -v d="$dst" '$1==d{b=$2} END{print b}' "$STATE/backups.list" 2>/dev/null)"
+    if [ -n "$backup" ] && [ -e "$backup" ]; then mkdir -p "$(dirname "$dst")"; mv "$backup" "$dst"; fi
+    grep -vxF "$dst" "$STATE/managed.list" > "$STATE/managed.tmp"; mv "$STATE/managed.tmp" "$STATE/managed.list"
+}
+
+cmd_uninstall() {
+    load_settings
+    [ -f "$STATE/managed.list" ] || ui_die "${T[uninstall_none]}"
+    ui_banner "uninstall"
+    ui_confirm "${T[uninstall_q]}" no || exit 0
+    [ "$DRY_RUN" = 1 ] && { sed "s|^$HOME|~|" "$STATE/managed.list"; exit 0; }
+    local f
+    # what matugen generated (colors.css and friends) goes too. Read it before config.toml is gone
+    local generated
+    generated="$(sed -n 's/^output_path = "\(.*\)"/\1/p' "$HOME/.config/matugen/config.toml" 2>/dev/null | sed "s|^~|$HOME|" | grep "^$HOME/")"
+    local dirs; dirs="$(xargs -rd '\n' dirname < "$STATE/managed.list" | sort -u)"
+    while IFS= read -r f; do restore_file "$f"; done < <(tac "$STATE/managed.list")
+    [ -n "$generated" ] && xargs -rd '\n' rm -f <<<"$generated"
+    # and the folders we made, if they ended up empty
+    while IFS= read -r f; do rmdir -p --ignore-fail-on-non-empty "$f" 2>/dev/null; done <<<"$dirs"
+    # generated stuff can live in YOUR folders (Obsidian vault), so only its own folder, no climbing
+    while IFS= read -r f; do rmdir "$f" 2>/dev/null; done <<<"$(xargs -rd '\n' dirname <<<"$generated")"
+    # The line the shell module added
+    grep -q '^# automata.lua$' "$HOME/.bashrc" 2>/dev/null && sed -i '/^# automata.lua$/,+1d' "$HOME/.bashrc"
+    # Stuff outside $HOME (login screen) needs sudo to undo
+    if [ -s "$STATE/system.list" ]; then
+        local cmd
+        while IFS= read -r cmd; do run_sudo "SDDM" sh -c "$cmd" || true; done < "$STATE/system.list"
+    fi
+    rm -f "$HOME/.local/bin/automata"
+    rm -rf "$SHARE" "$STATE" "$CONF"
+    ui_ok "${T[uninstall_done]}"
+}
+
+cmd_menu() {
+    load_settings
+    [ -f "$CONF/modules" ] || { cmd_install; return; }     # never installed? then install
+    ui_banner "settings"
+    local pick before
+    while true; do
+        pick="$(ui_choose "${T[menu_title]}" "" \
+            "look|${T[m_look]}" "apps|${T[m_apps]}" "keyboard|${T[m_keyboard]}" "wallpaper|${T[m_wallpaper]}" \
+            "bar|${T[m_bar]}" "idle|${T[m_idle]}" "fonts|${T[m_fonts]}" "language|${T[m_language]}" \
+            "modules|${T[m_modules]}" "uninstall|${T[m_backups]}" "quit|${T[quit]}")"
+        SETUP_MODE=custom TUNE=yes CUR_STEP=menu
+        local ok=0
+        case "$pick" in
+            look)      wizard q_look q_animations q_gaps_in q_gaps_out q_border q_rounding q_opacity q_blur || ok=1 ;;
+            apps)      wizard q_terminal q_files q_browser || ok=1 ;;
+            keyboard)  wizard q_keyboard || ok=1 ;;
+            wallpaper) wizard q_wallpapers q_scheme || ok=1
+                       [ "$ok" = 0 ] && [ "$(yes_no "${T[pick_wallpaper_now]}?" no)" = yes ] \
+                           && setsid -f "$HOME/.local/bin/change-wallpaper" >/dev/null 2>&1 ;;
+            bar)       wizard q_bar || ok=1 ;;
+            idle)      wizard q_lock q_screen || ok=1 ;;
+            fonts)     wizard q_font_ui q_font_mono || ok=1 ;;
+            language)  ask_language ;;
+            modules)
+                before="$(modules_installed | xargs)"
+                local now; now="$(pick_modules)" || continue
+                now="$(modules_resolve "$now" | xargs)"
+                local m added=""
+                for m in $now; do grep -qw "$m" <<<"$before" || added+=" $m"; done
+                for m in $before; do grep -qw "$m" <<<"$now" || remove_module "$m"; done
+                MODS="$now"
+                [ -n "$added" ] && { wizard q_vault; check_spotify "$added"; install_packages "$added"; }
+                save_module_list "$now"
+                save_settings; apply_all
+                [ -n "$added" ] && run_post "$added"
+                ui_ok "${T[saved]}"; continue ;;
+            uninstall) cmd_uninstall; exit 0 ;;
+            *)         exit 0 ;;
+        esac
+        # backed out with Esc: forget the half-answered stuff
+        if [ "$ok" = 1 ]; then load_settings; continue; fi
+        save_settings
+        ui_spin "…" "$0" apply >/dev/null 2>&1 || true
+        ui_ok "${T[saved]}"
+    done
+}
+
+# ── go ───────────────────────────────────────
+while [ $# -gt 0 ]; do
+    case "$1" in
+        install|apply|uninstall|menu) CMD="$1" ;;
+        --dry-run|--simular) DRY_RUN=1 ;;
+        --yes|-y)            AUTO_YES=1 ;;
+        --modules)           PICKED="${2//,/ }"; shift ;;
+        --modules=*)         PICKED="${1#*=}"; PICKED="${PICKED//,/ }" ;;
+        --uninstall)         CMD=uninstall ;;
+        -h|--help)           sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *)                   echo "?: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+[ "$EUID" = 0 ] && { echo "Don't run this with sudo / No lo corras con sudo"; exit 1; }
+"cmd_$CMD"

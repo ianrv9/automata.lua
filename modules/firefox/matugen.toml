@@ -1,0 +1,9 @@
+[templates.firefox]
+input_path = "~/.config/matugen/templates/firefox.css"
+output_path = "~/.config/automata/firefox/colors.css"
+
+# Pywalfox reads the palette in pywal format and repaints Firefox live
+[templates.pywalfox]
+input_path = "~/.config/matugen/templates/pywal.json"
+output_path = "~/.cache/wal/colors.json"
+post_hook = "command -v pywalfox >/dev/null && pywalfox update || true"

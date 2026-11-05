@@ -1,0 +1,132 @@
+/* automata for Spotify (Spicetify): framed panels with corner brackets, Space Grotesk,
+   almost-square corners. Colors (--spice-*) come from the wallpaper: color.ini on apply,
+   theme.js live */
+
+:root {
+  --hud-accent: var(--spice-button);
+  --hud-line: var(--spice-misc);
+  --encore-title-font-stack: "@@FONT_UI@@", sans-serif !important;
+  --encore-body-font-stack: "@@FONT_UI@@", sans-serif !important;
+  --encore-variable-font-stack: "@@FONT_UI@@", sans-serif !important;
+  --encore-corner-radius-larger: 4px !important;
+  --encore-corner-radius-large: 4px !important;
+  --encore-corner-radius-base: 3px !important;
+  --encore-corner-radius-small: 2px !important;
+}
+body, input, button { font-family: "@@FONT_UI@@", sans-serif !important; font-weight: 500; }
+
+/* ---------- main panels: frame + corner brackets (like the bar) ---------- */
+.Root__nav-bar,
+.Root__main-view,
+.Root__right-sidebar > div,
+.Root__now-playing-bar {
+  border: 2px solid color-mix(in srgb, var(--hud-line) 80%, transparent) !important;
+  border-radius: 4px !important;
+  background-image:
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)) !important;
+  background-repeat: no-repeat !important;
+  background-size: 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px !important;
+  background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom !important;
+  background-origin: border-box !important;
+}
+.Root__now-playing-bar { background-color: var(--spice-player) !important; }
+
+/* ---------- top search ---------- */
+[data-testid="search-input"],
+.main-globalNav-searchContainer form,
+.x-searchInput-searchInputInput {
+  border-radius: 3px !important;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--hud-line) 80%, transparent) !important;
+}
+[data-testid="search-input"]:focus,
+.x-searchInput-searchInputInput:focus {
+  box-shadow: inset 0 0 0 2px var(--hud-accent) !important;
+}
+/* home button and the other round buttons up top: square now */
+.main-globalNav-searchContainer button,
+.main-globalNav-navLink { border-radius: 3px !important; }
+
+/* ---------- cards and covers ---------- */
+.main-card-card,
+[data-encore-id="card"] {
+  border-radius: 3px !important;
+  border: 2px solid transparent;
+  transition: border-color 0.15s ease;
+}
+.main-card-card:hover,
+[data-encore-id="card"]:hover { border-color: color-mix(in srgb, var(--hud-accent) 55%, transparent) !important; }
+img, .main-image-image, .main-coverSlotExpanded-container { border-radius: 3px !important; }
+/* quick shortcuts at the top (Daily Mix and friends) */
+[data-testid="home-page"] a[draggable="true"],
+.view-homeShortcutsGrid-shortcut { border-radius: 3px !important; }
+
+/* "All / Music / Podcasts" filters: square, active one in the accent */
+[data-encore-id="chip"] span,
+.ChipInnerComponent,
+.ChipInnerComponent-selected { border-radius: 3px !important; }
+[aria-checked="true"] > [data-encore-id="chip"] span,
+.ChipInnerComponent-selected { background-color: var(--hud-accent) !important; color: var(--spice-main) !important; }
+
+/* ---------- player ---------- */
+[data-testid="control-button-playpause"] {
+  border-radius: 3px !important;
+  background-color: var(--hud-accent) !important;
+  color: var(--spice-main) !important;
+}
+[data-testid="control-button-playpause"] svg { fill: var(--spice-main) !important; }
+/* progress + volume bars in the accent */
+.progress-bar {
+  --fg-color: var(--hud-accent) !important;
+  --bg-color: color-mix(in srgb, var(--spice-text) 18%, transparent) !important;
+  --progress-bar-radius: 0 !important;
+}
+.progress-bar__slider { border-radius: 0 !important; width: 6px !important; }
+/* times in mono, like the clock on the bar */
+[data-testid="playback-position"],
+[data-testid="playback-duration"],
+.main-trackList-rowDuration {
+  font-family: "@@FONT_MONO@@", monospace !important;
+  font-size: 11px !important;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- library and lists ---------- */
+.main-trackList-trackListRow { border-radius: 3px !important; }
+.main-trackList-trackListRow[aria-selected="true"],
+.main-trackList-selected {
+  background-color: color-mix(in srgb, var(--hud-accent) 16%, transparent) !important;
+  box-shadow: inset 2px 0 0 var(--hud-accent);
+}
+/* whatever's playing: accent */
+.main-trackList-playingIcon, .main-trackList-active .main-trackList-rowTitle { color: var(--hud-accent) !important; }
+
+/* list headers ("Title", "Album"…), label style */
+.main-trackList-trackListHeaderRow {
+  font-family: "@@FONT_MONO@@", monospace !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 11px !important;
+}
+
+/* ---------- context menus ----------
+   Only Spotify's own menu (.main-contextMenu-menu). Styling its container (#context-menu)
+   too left a second see-through square behind the menu */
+.main-contextMenu-menu {
+  background-color: var(--spice-main-elevated) !important;
+  border: 2px solid color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
+  border-radius: 3px !important;
+}
+.main-contextMenu-menuItemButton { border-radius: 2px !important; }
+.main-contextMenu-menuItemButton:hover,
+.main-contextMenu-menuItemButton:focus {
+  background-color: color-mix(in srgb, var(--hud-accent) 16%, transparent) !important;
+}
+
+/* thin scrollbars in the accent */
+.os-scrollbar-handle, ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--hud-accent) 35%, transparent) !important;
+  border-radius: 0 !important;
+}

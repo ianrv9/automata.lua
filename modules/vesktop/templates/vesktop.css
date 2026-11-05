@@ -1,0 +1,230 @@
+/**
+ * @name automata
+ * @description HUD look: corner brackets, Space Grotesk, wallpaper colors (matugen)
+ * @author Calternar
+ * @version 3.0.0
+ */
+/* Base: Midnight. Split panels, and refact0r keeps it up to date with Discord so we don't have to */
+@import url("https://refact0r.github.io/midnight-discord/build/midnight.css");
+
+body {
+  --font: '@@FONT_UI@@';
+  --code-font: '@@FONT_MONO@@';
+  font-weight: 500;
+
+  --gap: 10px;
+  --border-thickness: 2px;            /* same as Hyprland's window borders */
+  --divider-thickness: 2px;
+  --top-bar-height: var(--gap);
+  --top-bar-button-position: titlebar;
+  --custom-window-controls: on;
+  --small-user-panel: on;
+  --custom-chatbar: off;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+
+  /* The window is transparent (Vesktop "transparent": true) and Hyprland blurs the wallpaper behind.
+     Background layer goes away so the wallpaper peeks between panels; panels stay dark (--bg-4) so text reads fine */
+  --transparency-tweaks: on;
+  --remove-bg-layer: on;
+  --panel-blur: off;               /* Hyprland does the blur, cheaper and actually real */
+  --bg-floating: {{colors.surface_container.default.hex}};   /* menus and popups: solid */
+}
+
+:root {
+  --colors: on;
+
+  /* wallpaper palette, same roles as waybar/rofi */
+  --hud-accent:  {{colors.primary.default.hex}};
+  --hud-accent2: {{colors.tertiary.default.hex}};
+  --hud-border:   {{colors.outline_variant.default.hex}};
+
+  --text-0: {{colors.on_primary.default.hex}};
+  --text-1: {{colors.on_surface.default.hex}};
+  --text-2: {{colors.on_surface.default.hex}};
+  --text-3: {{colors.on_surface.default.hex}};
+  /* secondary text (timestamps, subtitles…) stays bright, it sits on top of a see-through panel */
+  --text-4: {{colors.on_surface_variant.default.hex}};
+  --text-5: color-mix(in srgb, {{colors.on_surface_variant.default.hex}} 82%, {{colors.surface.default.hex}});
+
+  --bg-1: {{colors.surface_container_highest.default.hex}};
+  --bg-2: {{colors.surface_container_high.default.hex}};
+  /* See-through panels. Light text always sits on at least 62% dark color; with the blur
+     that's readable even on a bright, noisy wallpaper. Tested on some really ugly ones */
+  --bg-3: color-mix(in srgb, {{colors.surface_container_lowest.default.hex}} 20%, transparent);
+  --bg-4: color-mix(in srgb, {{colors.surface.default.hex}} 62%, transparent);
+
+  --hover:    color-mix(in srgb, var(--hud-accent) 8%, transparent);
+  --active:   color-mix(in srgb, var(--hud-accent) 14%, transparent);
+  --active-2: color-mix(in srgb, var(--hud-accent) 20%, transparent);
+  --message-hover: color-mix(in srgb, var(--hud-accent) 4%, transparent);
+
+  --accent-1: var(--hud-accent);
+  --accent-2: var(--hud-accent);
+  --accent-3: var(--hud-accent);
+  --accent-4: {{colors.primary_container.default.hex}};
+  --accent-5: {{colors.primary_container.default.hex}};
+  --accent-new: {{colors.error.default.hex}};
+
+  --border-light: color-mix(in srgb, var(--hud-border) 45%, transparent);
+  --border:       color-mix(in srgb, var(--hud-border) 70%, transparent);
+  --border-hover: color-mix(in srgb, var(--hud-accent) 55%, transparent);
+  --button-border: color-mix(in srgb, var(--hud-border) 60%, transparent);
+}
+
+/* ---------- menus, profiles, popups: always solid ----------
+   Discord paints them with the same variables as the panels (which are see-through here),
+   so inside the floating layers they get redefined. Variables resolve where they're declared,
+   that's why they're repeated here instead of just changing --bg-4 */
+[class*="layerContainer_"],
+[role="menu"],
+[role="dialog"],
+.searchFloating__1ac1c,
+.autocomplete__6b0e0 {
+  /* 82% color + heavy blur (below): you can tell there's something behind, but it doesn't fight the text */
+  --hud-solid: color-mix(in srgb, {{colors.surface_container.default.hex}} 82%, transparent);
+  --hud-solid-low: color-mix(in srgb, {{colors.surface_container_low.default.hex}} 82%, transparent);
+  --bg-3: var(--hud-solid);
+  --bg-4: var(--hud-solid-low);
+  --background-base-low: var(--hud-solid-low);
+  --background-base-lower: var(--hud-solid-low);
+  --background-base-lowest: var(--hud-solid-low);
+  --background-surface-high: var(--hud-solid);
+  --background-surface-higher: var(--hud-solid);
+  --background-surface-highest: var(--hud-solid);
+  --modal-background: var(--hud-solid-low);
+  --card-background-default: var(--hud-solid);
+  --profile-gradient-secondary-color: var(--hud-solid-low);
+}
+/* Heavy blur behind menus, profiles, modals, tooltips.
+   Closed list on purpose: some [role="dialog"] (the GIF/sticker picker) are invisible
+   containers almost the size of the window, and the blur showed up as a floating smudge */
+[role="menu"],
+[class*="layerContainer_"] [role="listbox"],
+[class*="tooltip_"]:not([class*="tooltipPointer"]),
+[class*="userPopoutOuter"],
+[class*="userProfileModalOuter"],
+[class*="userProfileOuter"],
+[role="dialog"][class*="root_"][class*="modal"],
+[class*="contentWrapper_"][class*="drawerSizingWrapper"],
+[class*="expressionPicker"] [class*="contentWrapper_"] {
+  backdrop-filter: blur(28px) saturate(1.4) !important;
+}
+
+/* tooltips (server names on hover…) render outside the layers above, so they bring their own background */
+[class*="tooltip_"]:not([class*="tooltipPointer"]) {
+  --background-surface-high: color-mix(in srgb, {{colors.surface_container.default.hex}} 82%, transparent);
+  --background-surface-higher: color-mix(in srgb, {{colors.surface_container.default.hex}} 82%, transparent);
+  --background-surface-highest: color-mix(in srgb, {{colors.surface_container.default.hex}} 82%, transparent);
+  background-color: color-mix(in srgb, {{colors.surface_container.default.hex}} 82%, transparent) !important;
+  border: 2px solid color-mix(in srgb, var(--hud-accent) 40%, transparent) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-1) !important;
+}
+
+/* right-click menu and the server search popout (a role=listbox inside the floating layers) get an accent frame */
+[class*="layerContainer_"] [role="listbox"],
+[role="menu"] {
+  /* Almost solid: inside Discord's floating layers the blur has nothing to blur
+     (the layer animates its opacity and Chromium drops backdrop-filter there) */
+  --hud-solid: color-mix(in srgb, {{colors.surface_container.default.hex}} 95%, transparent);
+  background-color: var(--hud-solid) !important;
+  border: 2px solid color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* hover toolbar on messages (react, reply, …). Discord uses --bg-3 for it, which is nearly invisible here */
+[class*="buttonsInner_"] {
+  background-color: color-mix(in srgb, {{colors.surface_container.default.hex}} 95%, transparent) !important;
+  border: 2px solid color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* ---------- corner brackets on the main panels (like the bar) ---------- */
+.guilds__5e434,
+.sidebarList__5e434,
+.panels__5e434,
+.chat_f75fb0 > .subtitleContainer_f75fb0,
+.chatContent_f75fb0,
+.container_c8ffbb,
+.peopleColumn__133bf,
+.nowPlayingColumn__133bf {
+  background-image:
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent)),
+    linear-gradient(var(--hud-accent), var(--hud-accent)), linear-gradient(var(--hud-accent), var(--hud-accent));
+  background-repeat: no-repeat;
+  background-size: 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px;
+  background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom;
+  background-origin: border-box;
+}
+
+/* ---------- label-style headers: categories and member groups ---------- */
+.sidebarList__5e434 h3,
+.container_c8ffbb h3 {
+  font-family: '@@FONT_MONO@@', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--hud-accent) 75%, var(--text-4));
+}
+
+/* selected channel: accent bar on the left, like the active workspace on the bar */
+.sidebarList__5e434 [class*="modeSelected_"] [class*="link_"] {
+  background: color-mix(in srgb, var(--hud-accent) 14%, transparent);
+  box-shadow: inset 2px 0 0 var(--hud-accent);
+}
+.sidebarList__5e434 [class*="modeSelected_"] [class*="name_"] { color: var(--hud-accent); }
+
+/* ---------- channels: read = dim, unread = bright and bold ----------
+   Classes checked with Vesktop's devtools (Nov 2026): each channel is .wrapper__2ea32 with
+   modeUnreadImportant / modeSelected / modeMuted. Color goes straight on the element because
+   Midnight redefines the variables (--channels-default) inside every .theme-dark layer.
+   If Discord renames these classes, this is the part that breaks first */
+.sidebarList__5e434 [class*="wrapper__2ea32"] [class*="name"],
+.sidebarList__5e434 [class*="wrapper__2ea32"] [class*="icon"] {
+  color: color-mix(in srgb, {{colors.outline.default.hex}} 92%, {{colors.surface.default.hex}}) !important;
+}
+.sidebarList__5e434 [class*="wrapper__2ea32"][class*="modeMuted"] [class*="name"],
+.sidebarList__5e434 [class*="wrapper__2ea32"][class*="modeMuted"] [class*="icon"] {
+  color: color-mix(in srgb, {{colors.outline.default.hex}} 55%, {{colors.surface.default.hex}}) !important;
+}
+.sidebarList__5e434 [class*="wrapper__2ea32"][class*="modeUnread"] [class*="name"],
+.sidebarList__5e434 [class*="wrapper__2ea32"][class*="modeUnread"] [class*="icon"],
+.sidebarList__5e434 [class*="wrapper__2ea32"]:hover [class*="name"] {
+  color: {{colors.on_surface.default.hex}} !important;
+}
+.sidebarList__5e434 [class*="wrapper__2ea32"][class*="modeUnread"] [class*="name"] { font-weight: 700 !important; }
+
+/* channel title a bit heavier */
+.title_f75fb0 { font-weight: 700; letter-spacing: 0.02em; }
+
+/* message timestamps in mono, like the clock */
+[class*="timestamp_"] time,
+[class*="timestamp_"] {
+  font-family: '@@FONT_MONO@@', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+/* no thin weights on usernames */
+[class*="username_"] { font-weight: 600; }
+
+/* message box: accent outline on focus */
+[class*="channelTextArea_"] [class*="scrollableContainer_"] {
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s ease;
+}
+[class*="channelTextArea_"]:focus-within [class*="scrollableContainer_"] { border-color: var(--hud-accent); }
+
+/* thin scrollbars in the accent color */
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--hud-accent) 35%, transparent) !important;
+  border-radius: 0 !important;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--hud-accent) !important; }

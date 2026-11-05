@@ -1,0 +1,142 @@
+/* Firefox in HUD style (toolbar, tabs, menus). Made for Firefox 159: class and variable
+   names dug out of its omni.ja (urlbar.css, tabs.css), so newer versions might move stuff.
+   Colors: with Pywalfox on (it's a Firefox theme, :root[lwtheme]) they come from the theme and
+   change live. Without it, colors.css is used, and Firefox only reads that on startup.
+   Hooked up by: firefox-hud --install */
+@import url("colors.css");
+
+/* ---------- accent ----------
+   With Pywalfox, popup_highlight is palette color 10 = the wallpaper accent */
+:root[lwtheme] {
+  --hud-accent: var(--urlbarview-background-color-selected, var(--hud-accent-fixed)) !important;
+}
+:root {
+  /* Firefox's purple (buttons, checkboxes, light/dark picker) becomes the accent */
+  --color-accent-primary: var(--hud-accent) !important;
+  --color-accent-primary-hover: color-mix(in srgb, var(--hud-accent) 85%, white) !important;
+  --color-accent-primary-active: color-mix(in srgb, var(--hud-accent) 75%, white) !important;
+  --focus-outline-color: var(--hud-accent) !important;
+  --toolbarbutton-border-radius: 3px !important;
+  --tab-border-radius: 3px !important;
+  --panel-border-radius: 3px !important;
+}
+
+/* ---------- fixed colors, only when no theme (Pywalfox) is active ---------- */
+:root:not([lwtheme]) {
+  --lwt-accent-color: var(--hud-bg-low) !important;
+  --lwt-text-color: var(--hud-text) !important;
+  --toolbox-background-color: var(--hud-bg-low) !important;
+  --toolbox-background-color-inactive: var(--hud-bg-low) !important;
+  --toolbox-text-color: var(--hud-text) !important;
+  --toolbar-background-color: var(--hud-bg-low) !important;
+  --toolbar-text-color: var(--hud-text) !important;
+  --toolbar-bgcolor: var(--hud-bg-low) !important;
+  --toolbar-color: var(--hud-text) !important;
+  --toolbar-field-background-color: var(--hud-bg) !important;
+  --toolbar-field-background-color-focus: var(--hud-surface) !important;
+  --toolbar-field-text-color: var(--hud-text) !important;
+  --toolbar-field-text-color-focus: var(--hud-text) !important;
+  --toolbar-field-border-color: var(--hud-line) !important;
+  --toolbar-field-border-color-focus: var(--hud-accent) !important;
+  --smartbar-background-color: var(--hud-surface) !important;
+  --smartbar-outline: none !important;
+  --tab-background-color-selected: color-mix(in srgb, var(--hud-accent) 16%, var(--hud-bg-low)) !important;
+  --tab-background-color-hover: color-mix(in srgb, var(--hud-accent) 8%, transparent) !important;
+  --tab-text-color-selected: var(--hud-text) !important;
+  --sidebar-background-color: var(--hud-bg-low) !important;
+  --sidebar-text-color: var(--hud-text) !important;
+  --sidebar-border-color: var(--hud-line) !important;
+  --panel-background-color: var(--hud-surface) !important;
+  --panel-text-color: var(--hud-text) !important;
+  --panel-border-color: color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
+  --panel-separator-color: var(--hud-line) !important;
+  --panel-border-radius: 3px !important;
+  --arrowpanel-background: var(--hud-surface) !important;
+  --arrowpanel-color: var(--hud-text) !important;
+  --arrowpanel-border-color: color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
+  --focus-outline-color: var(--hud-accent) !important;
+  --toolbarbutton-border-radius: 3px !important;
+  --toolbarbutton-background-color-hover: color-mix(in srgb, var(--hud-accent) 14%, transparent) !important;
+  --toolbarbutton-background-color-active: color-mix(in srgb, var(--hud-accent) 24%, transparent) !important;
+  --button-primary-bgcolor: var(--hud-accent) !important;
+  --button-primary-color: var(--hud-on-accent) !important;
+  --urlbarView-highlight-background: color-mix(in srgb, var(--hud-accent) 22%, transparent) !important;
+  --urlbarView-highlight-color: var(--hud-text) !important;
+  --tab-border-radius: 3px !important;
+}
+
+/* desktop font, no thin weights */
+:root, menupopup, panel, .urlbar-input {
+  font-family: "@@FONT_UI@@", sans-serif !important;
+  font-weight: 500 !important;
+}
+
+/* corner brackets, same trick as the bar and Discord (8 strokes of 2 px) */
+.urlbar-background,
+#sidebar-main {
+  --hud-marca: var(--hud-accent);
+  background-image:
+    linear-gradient(var(--hud-marca), var(--hud-marca)), linear-gradient(var(--hud-marca), var(--hud-marca)),
+    linear-gradient(var(--hud-marca), var(--hud-marca)), linear-gradient(var(--hud-marca), var(--hud-marca)),
+    linear-gradient(var(--hud-marca), var(--hud-marca)), linear-gradient(var(--hud-marca), var(--hud-marca)),
+    linear-gradient(var(--hud-marca), var(--hud-marca)), linear-gradient(var(--hud-marca), var(--hud-marca)) !important;
+  background-repeat: no-repeat !important;
+  background-size: 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px !important;
+  background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom !important;
+}
+
+/* ---------- address bar: panel with a 2 px frame ---------- */
+.urlbar-background {
+  border: 2px solid var(--hud-line) !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background-color: var(--toolbar-field-background-color) !important;
+}
+#urlbar:is([focused], [open]) > .urlbar-background {
+  border-color: var(--hud-accent) !important;
+  background-color: var(--toolbar-field-background-color-focus, var(--toolbar-field-background-color)) !important;
+}
+/* when suggestions open, the whole panel gets an accent shadow */
+#urlbar[open] > .urlbar-background {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--hud-accent) 25%, transparent) !important;
+}
+
+/* ---------- 2 px line between the UI and the page ---------- */
+#navigator-toolbox { border-bottom: 2px solid var(--hud-line) !important; }
+#PersonalToolbar toolbarbutton.bookmark-item { border-radius: 3px !important; }
+#PersonalToolbar toolbarbutton.bookmark-item:hover {
+  background: color-mix(in srgb, var(--hud-accent) 14%, transparent) !important;
+}
+
+/* ---------- vertical tabs (sidebar) ---------- */
+#sidebar-main {
+  border-inline-end: 2px solid var(--hud-line) !important;
+  background-color: var(--sidebar-background-color) !important;
+}
+.tab-background { border-radius: 3px !important; }
+.tab-background:is([selected], [multiselected]),
+.tabbrowser-tab[selected] .tab-background {
+  background: color-mix(in srgb, var(--hud-accent) 18%, transparent) !important;
+  box-shadow: inset 2px 0 0 var(--hud-accent) !important;
+  outline: none !important;
+}
+/* horizontal tabs, in case you turn the vertical ones off: bar at the bottom */
+#tabbrowser-tabs:not([orient="vertical"]) .tab-background:is([selected], [multiselected]) {
+  box-shadow: inset 0 -2px 0 var(--hud-accent) !important;
+}
+
+/* the page gets a 2 px frame, like any other window on the desktop */
+#tabbrowser-tabbox {
+  border-radius: 3px !important;
+  box-shadow: 0 0 0 2px var(--hud-line) !important;
+  overflow: clip !important;
+}
+
+/* ---------- menus and panels ---------- */
+menupopup, panel {
+  --panel-border-radius: 3px !important;
+  --panel-border-color: color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
+  --menu-border-color: color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
+  --menuitem-hover-background-color: color-mix(in srgb, var(--hud-accent) 18%, transparent) !important;
+}

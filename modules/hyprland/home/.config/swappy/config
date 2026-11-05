@@ -1,0 +1,11 @@
+# swappy: screenshot editor (Super+Shift+S / Print)
+[Default]
+save_dir=$HOME/Pictures/Screenshots
+save_filename_format=screenshot-%Y%m%d-%H%M%S.png
+# closes itself after copy/save, otherwise you wait ~0.7 s for the PNG and then close it by hand. no thanks
+early_exit=true
+show_panel=false
+line_size=5
+text_size=20
+text_font=@@FONT_UI@@
+paint_mode=brush
