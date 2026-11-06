@@ -1,2 +1,60 @@
 /* wallpaper colors (matugen) */
 @import "colors.css";
+
+/* Thunar: thin lines, square corners and accent marks, same as the bar */
+.shortcuts-pane,
+.sidebar,
+.sidebar .view {
+    background-color: @sidebar_bg_color;
+}
+.shortcuts-pane {
+    border-right: 2px solid alpha(@accent_bg_color, 0.30);
+}
+/* file views: same background as the rest (Thunar's icon view ignores the theme's) */
+.standard-view,
+.standard-view > .view {
+    background-color: @view_bg_color;
+}
+/* selected stuff: tinted, with a 2 px accent mark on the left */
+.view:selected,
+.view:selected:focus {
+    background-color: alpha(@accent_bg_color, 0.22);
+    color: @window_fg_color;
+    border-radius: 2px;
+}
+treeview.view:selected {
+    box-shadow: inset 2px 0 @accent_bg_color;
+}
+/* breadcrumbs: square, the current folder underlined in the accent */
+.path-bar button,
+.path-bar-button,
+.location-button {
+    border-radius: 2px;
+}
+.path-bar button:checked,
+.path-bar-button:checked,
+.location-button:checked {
+    background-color: alpha(@accent_bg_color, 0.20);
+    box-shadow: inset 0 -2px @accent_bg_color;
+}
+.thunar entry,
+.location-entry,
+#ThunarLocationEntry entry {
+    border-radius: 2px;
+}
+/* status bar and list headers read like HUD labels */
+.statusbar-text,
+#ThunarStatusbar label {
+    font-family: "@@FONT_MONO@@";
+    font-size: 10px;
+}
+treeview.view header button {
+    font-family: "@@FONT_MONO@@";
+    font-size: 9px;
+    letter-spacing: 2px;
+}
+/* ...and no gray boxes behind the file names */
+.standard-view .view .cell:not(:selected),
+.standard-view .view:not(:selected) {
+    background-color: transparent;
+}

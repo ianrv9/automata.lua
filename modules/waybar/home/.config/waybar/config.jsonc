@@ -119,11 +119,16 @@
     },
 
     "network": {
-        // name on the bar, IP only on hover (screenshots end up everywhere)
-        "format-ethernet": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> {ifname}",
+        // the bar says what you're on (cable, or the wifi's name). IP only on hover, because
+        // screenshots end up everywhere. Click: nmtui, to pick a wifi or change anything
+        "format-ethernet": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> @@t:wired@@",
         "format-wifi": "<span alpha='55%' size='8pt' letter_spacing='1500'>WIFI</span> {essid}",
+        "format-linked": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> @@t:no_ip@@",
         "format-disconnected": "<span alpha='55%' size='8pt' letter_spacing='1500'>@@t:net@@</span> @@t:offline@@",
-        "tooltip-format": "{ifname} · {ipaddr} · ↓ {bandwidthDownBytes} ↑ {bandwidthUpBytes}",
+        "tooltip-format-ethernet": "{ifname} · {ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
+        "tooltip-format-wifi": "{essid} · {signalStrength}% · {frequency} GHz\n{ifname} · {ipaddr}/{cidr}\n↓ {bandwidthDownBytes}   ↑ {bandwidthUpBytes}",
+        "tooltip-format-disconnected": "@@t:offline@@",
+        "on-click": "@@TERMINAL@@ -e nmtui",
         "interval": 5
     },
 

@@ -10,6 +10,7 @@ gtk_set() {     # gtk_set key value
 if command -v gsettings >/dev/null; then
     gtk_set gtk-theme adw-gtk3-dark
     gtk_set color-scheme prefer-dark
+    gtk_set icon-theme Papirus-Dark       # the default icons are dark-on-dark here
     gtk_set font-name "$FONT_UI 11"
     if is_installed hyprland; then
         gtk_set cursor-theme Bibata-Modern-Classic
