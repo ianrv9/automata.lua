@@ -6,3 +6,8 @@ output_path = "~/.config/waybar/colors.css"
 [templates.waybar_logo]
 input_path = "~/.config/matugen/templates/waybar-logo.svg"
 output_path = "~/.config/waybar/logo.svg"
+
+# btop (it opens from the bar), in the wallpaper's colors
+[templates.btop]
+input_path = "~/.config/matugen/templates/btop.theme"
+output_path = "~/.config/btop/themes/automata.theme"

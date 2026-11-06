@@ -14,12 +14,13 @@ A Hyprland rice with a HUD look. It takes the colors from your wallpaper and app
 
 </div>
 
-<!-- Screenshots go in assets/ -->
 | Desktop | Launcher + wallpaper picker | Lock screen |
 |:---:|:---:|:---:|
-| ![](assets/desktop.png) | ![](assets/launcher.png) | ![](assets/lock.png) |
+| ![](assets/desktop.jpg) | ![](assets/launcher.jpg) | ![](assets/lock.jpg) |
 | **Discord (Vesktop)** | **Firefox** | **Spotify** |
-| ![](assets/vesktop.png) | ![](assets/firefox.png) | ![](assets/spotify.png) |
+| ![](assets/vesktop.jpg) | ![](assets/firefox.jpg) | ![](assets/spotify.jpg) |
+| **Obsidian** | | |
+| ![](assets/obsidian.jpg) | | |
 
 ## What it is
 

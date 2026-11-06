@@ -14,12 +14,13 @@ Un rice para Hyprland con estética HUD. Toma los colores de tu fondo de pantall
 
 </div>
 
-<!-- Las capturas van en assets/ -->
 | Escritorio | Lanzador + selector de fondos | Bloqueo |
 |:---:|:---:|:---:|
-| ![](assets/desktop.png) | ![](assets/launcher.png) | ![](assets/lock.png) |
+| ![](assets/desktop.jpg) | ![](assets/launcher.jpg) | ![](assets/lock.jpg) |
 | **Discord (Vesktop)** | **Firefox** | **Spotify** |
-| ![](assets/vesktop.png) | ![](assets/firefox.png) | ![](assets/spotify.png) |
+| ![](assets/vesktop.jpg) | ![](assets/firefox.jpg) | ![](assets/spotify.jpg) |
+| **Obsidian** | | |
+| ![](assets/obsidian.jpg) | | |
 
 ## Qué es
 

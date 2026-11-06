@@ -203,7 +203,7 @@ hl.bind(mod .. " + SHIFT + S", hl.dsp.exec_cmd(screenshot))
 hl.bind("Print",               hl.dsp.exec_cmd(screenshot))
 hl.bind(mod .. " + SHIFT + V", hl.dsp.exec_cmd("bash -c 'cliphist list | rofi -dmenu -i -p @@t:clipboard@@ -theme ~/.config/rofi/clipboard.rasi | cliphist decode | wl-copy'"))
 -- screen off, with 1.5 s to let go of the keys (or the key release wakes it right back up)
-hl.bind(mod .. " + Delete", hl.dsp.exec_cmd("bash -c 'sleep 1.5 && echo \"dispatch dpms off\" | socat - UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket.sock'"))
+hl.bind(mod .. " + Delete", hl.dsp.exec_cmd([[bash -c 'sleep 1.5 && hyprctl dispatch "hl.dsp.dpms({ action = \"off\" })"']]))
 
 -- Float toggle. Also shrinks and centers it, otherwise big windows end up tucked under the bar
 hl.bind(mod .. " + V", function()
