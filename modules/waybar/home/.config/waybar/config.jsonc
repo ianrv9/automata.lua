@@ -14,7 +14,7 @@
     "modules-right": ["group/system", "group/audio", "network", "tray", "custom/power"],
 
     "custom/launcher": {
-        "format": "\uf303",
+        "format": " ",          // the logo is drawn by the CSS, but an empty module would vanish
         "tooltip-format": "@@t:apps_tip@@",
         "on-click": "rofi -show drun",
         "on-click-right": "$HOME/.local/bin/change-wallpaper"
@@ -39,6 +39,7 @@
     },
 
     "clock": {
+        "locale": "@@TIME_LOCALE@@",
         "format": "<b>{0:%H:%M}</b>  <span alpha='60%' size='9pt' letter_spacing='1200'>{0:L%a %d %b}</span>",
         "tooltip-format": "<tt>{calendar}</tt>",
         "calendar": {

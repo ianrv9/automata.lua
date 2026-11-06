@@ -87,7 +87,12 @@ build_render() {
     local k v esc
     LOCK_SECONDS=$(( LOCK_AFTER > 0 ? LOCK_AFTER * 60 : 99999999 ))          # "never" = in about 3 years
     SCREEN_OFF_SECONDS=$(( SCREEN_OFF_AFTER > 0 ? SCREEN_OFF_AFTER * 60 : 99999999 ))
-    for k in $(setting_keys) LOCK_SECONDS SCREEN_OFF_SECONDS; do
+    # dates in the bar follow LANGUAGE, not the system locale. Any installed locale of that language
+    # will do (es_ES missing but es_MX there? fine)
+    TIME_LOCALE="$(locale -a 2>/dev/null | grep -m1 -ix "${T[ui_locale]%%.*}\.utf-\?8")"
+    [ -n "$TIME_LOCALE" ] || TIME_LOCALE="$(locale -a 2>/dev/null | grep -m1 -i "^${LANGUAGE}_.*utf")"
+    : "${TIME_LOCALE:=C.UTF-8}"
+    for k in $(setting_keys) LOCK_SECONDS SCREEN_OFF_SECONDS TIME_LOCALE; do
         v="${!k}"; esc="$(printf '%s' "$v" | sed 's/[\\|&]/\\&/g')"
         printf 's|@@%s@@|%s|g\n' "$k" "$esc"
     done > "$RENDER_SED"
@@ -106,9 +111,9 @@ render() {      # render <src> -> stdout
 is_managed() { grep -qxF "$1" "$STATE/managed.list" 2>/dev/null; }
 
 # place <src> <dst>: renders src into dst.
-#  - dst is yours (we never placed it): moved to backups, uninstall puts it back
-#  - dst is ours but you edited it since: a copy of your version is kept, and you get told
-#  - dst is ours and untouched: just overwritten
+#  - dst is yours (automata never placed it): moved to backups, uninstall puts it back
+#  - dst is automata's but you edited it since: a copy of your version is kept, and you get told
+#  - dst is automata's and untouched: just overwritten
 PLACED=0 BACKED=0
 place() {
     local src="$1" dst="$2" new; new="$(mktemp)"
@@ -142,7 +147,7 @@ place() {
     mark_managed "$dst"
 }
 
-# Every file we place gets its checksum written down, that's how we notice your hand edits
+# Every file placed gets its checksum written down, that's how hand edits get noticed
 file_sum() { sha1sum "$1" 2>/dev/null | cut -d' ' -f1; }
 was_edited() {
     local known; known="$(awk -v f="$1" '$2==f{s=$1} END{print s}' "$STATE/managed.sum" 2>/dev/null)"
@@ -165,7 +170,7 @@ module_targets() {
     return 0
 }
 
-# Files we placed in an older version that no version places anymore (renamed, moved, dropped).
+# Files an older version placed that no version places anymore (renamed, moved, dropped).
 # They go away, or back to your original if they replaced one.
 prune_stale() {
     [ "${DRY_RUN:-0}" = 1 ] && return
@@ -178,7 +183,7 @@ prune_stale() {
     rm -f "$wanted"
 }
 
-# Deletes one of our files and puts yours back if there was one
+# Deletes one of automata's files and puts yours back if there was one
 restore_file() {
     local dst="$1" backup
     is_managed "$dst" || return 0
@@ -256,13 +261,13 @@ run_sudo() {    # run_sudo "why" cmd...
 }
 
 # ── lines in your shell's rc file ────────────
-# Everything we add lives between these two markers, so uninstall can take it out cleanly
+# Everything automata adds lives between these two markers, so uninstall can take it out cleanly
 RC_START="# >>> automata.lua >>>"
 RC_END="# <<< automata.lua <<<"
 
 rc_has() { grep -qxF "$2" "$1" 2>/dev/null; }    # rc_has <rc> <line>
 
-rc_add() {      # rc_add <rc> <line>: puts the line inside our block (makes the block if needed)
+rc_add() {      # rc_add <rc> <line>: puts the line inside automata's block (makes the block if needed)
     local rc="$1" line="$2"
     rc_has "$rc" "$line" && return 0
     [ "${DRY_RUN:-0}" = 1 ] && return 0
@@ -275,7 +280,7 @@ rc_add() {      # rc_add <rc> <line>: puts the line inside our block (makes the 
     rm -f "$tmp"
 }
 
-rc_clean() {    # rc_clean <rc>: removes our block (and the old one-line style from v0.0)
+rc_clean() {    # rc_clean <rc>: removes automata's block (and the old one-line style from v0.0)
     [ -f "$1" ] || return 0
     local tmp; tmp="$(mktemp)"
     awk -v s="$RC_START" -v e="$RC_END" '
@@ -310,12 +315,21 @@ detect_gpu() {
 }
 
 # ── reload everything that's running ─────────
+# After uninstall: what automata started goes away, the rest reloads with the old configs
+stop_desktop() {
+    [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] || return 0
+    pkill -f "while hyprctl version >/dev/null 2>&1; do waybar" 2>/dev/null    # the respawn loop first
+    pkill -x waybar; pkill -x mpvpaper; pkill -x dunst
+    pkill -USR1 -x kitty 2>/dev/null
+    hyprctl reload >/dev/null 2>&1
+}
+
 reload_desktop() {
     [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] || return 0
     hyprctl reload >/dev/null 2>&1
     # waybar: the autostart loop brings it back by itself
     pkill -x waybar
-    # ...unless you started waybar some other way, then we do it
+    # ...unless it had started waybar some other way, then this does it
     ( sleep 3; pgrep -x waybar >/dev/null || setsid -f waybar >/dev/null 2>&1 ) &
     if pgrep -x hypridle >/dev/null; then
         if systemctl --user -q is-active hypridle 2>/dev/null; then systemctl --user restart hypridle

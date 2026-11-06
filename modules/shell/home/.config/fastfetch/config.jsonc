@@ -1,9 +1,13 @@
 // Colors come from the terminal, so they follow the wallpaper too.
 {
     "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    // automata's logo, in the wallpaper's color (matugen writes logo.txt with the color codes baked in)
     "logo": {
-        "type": "small",
-        "padding": { "top": 1, "right": 3 }
+        "type": "file-raw",
+        "source": "~/.config/fastfetch/logo.txt",
+        "width": 18,
+        "height": 9,
+        "padding": { "top": 2, "left": 1, "right": 4 }
     },
     "display": {
         "separator": "  ",

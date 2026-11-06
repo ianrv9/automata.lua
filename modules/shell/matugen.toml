@@ -1,0 +1,3 @@
+[templates.fastfetch_logo]
+input_path = "~/.config/matugen/templates/fastfetch-logo.txt"
+output_path = "~/.config/fastfetch/logo.txt"

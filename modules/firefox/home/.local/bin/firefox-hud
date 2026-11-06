@@ -11,15 +11,15 @@ done
 INI="$BASE/profiles.ini"
 PREF='user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);'
 
-[ "$1" = "--install" ] || { echo "usage: firefox-hud --install"; exit 1; }
-[ -f "$INI" ] || { echo "no $INI (never opened Firefox?)"; exit 1; }
+[ "$1" = "--install" ] || { echo "@@t:ffh_usage@@ firefox-hud --install"; exit 1; }
+[ -f "$INI" ] || { echo "@@t:ffh_no_ini@@ $INI)"; exit 1; }
 
 # Profile in use: Default= under [Install…], or else the one marked Default=1
 PROFILE=$(awk -F= '/^\[Install/{i=1;next} /^\[/{i=0} i&&$1=="Default"{print $2; exit}' "$INI")
 [ -n "$PROFILE" ] || PROFILE=$(awk -F= '/^\[Profile/{p="";d=0} $1=="Path"{p=$2} $1=="Default"&&$2==1{d=1} d&&p{print p; exit}' "$INI")
-[ -n "$PROFILE" ] || { echo "can't tell which profile you use in $INI"; exit 1; }
+[ -n "$PROFILE" ] || { echo "@@t:ffh_no_profile@@ $INI"; exit 1; }
 case "$PROFILE" in /*) DIR="$PROFILE" ;; *) DIR="$BASE/$PROFILE" ;; esac
-[ -d "$DIR" ] || { echo "profile $DIR doesn't exist"; exit 1; }
+[ -d "$DIR" ] || { echo "@@t:ffh_no_dir@@ $DIR"; exit 1; }
 
 mkdir -p "$DIR/chrome"
 for f in userChrome.css userContent.css colors.css wallpaper.jpg; do
@@ -27,10 +27,10 @@ for f in userChrome.css userContent.css colors.css wallpaper.jpg; do
     # had your own userChrome? it's kept as .before-automata
     if [ -e "$dst" ] && [ ! -L "$dst" ]; then
         mv "$dst" "$dst.before-automata"
-        echo "your old one: $dst.before-automata"
+        echo "@@t:ffh_old@@ $dst.before-automata"
     fi
     ln -sfn "$SRC/$f" "$dst"
 done
 
 grep -qxF "$PREF" "$DIR/user.js" 2>/dev/null || printf '%s\n' "$PREF" >> "$DIR/user.js"
-echo "done: $DIR"
+echo "@@t:ffh_done@@ $DIR"

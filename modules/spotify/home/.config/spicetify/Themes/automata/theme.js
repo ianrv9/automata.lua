@@ -1,6 +1,6 @@
 // Live colors for Spotify.
 // matugen writes automata-colors.json inside Spotify's xpui folder on every wallpaper change.
-// We poll it every 2 s and swap the --spice-* variables, no restart needed.
+// It gets polled every 2 s and swap the --spice-* variables, no restart needed.
 // File missing (right after a Spotify update, say)? Then color.ini's colors stay.
 (function automataLiveColors() {
     const FILE = "automata-colors.json";

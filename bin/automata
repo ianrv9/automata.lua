@@ -192,7 +192,7 @@ q_vault() {
     else ui_warn "${T[vault_bad]}"; OBSIDIAN_VAULT=""; fi
 }
 
-# Your existing Hyprland config, if there is one we didn't put there
+# Your existing Hyprland config, if there is one automata didn't put there
 old_hypr_config() {
     local f
     for f in "$HOME/.config/hypr/hyprland.lua" "$HOME/.config/hypr/hyprland.conf"; do
@@ -205,7 +205,7 @@ q_import() {
         "keep|${T[import_keep]}" "fresh|${T[import_fresh]}")" || return 1
 }
 
-# Runs the importer into personal.lua. hyprland.conf gets put away too, so Hyprland only sees our .lua
+# Runs the importer into personal.lua. hyprland.conf gets put away too, so Hyprland only sees automata's .lua
 import_old_config() {
     [ "${IMPORT:-}" = keep ] || return 0
     local old personal="$HOME/.config/hypr/personal.lua" err out
@@ -245,6 +245,50 @@ check_spotify() {
 SETUP_QUESTIONS=(q_modules q_mode q_terminal q_files q_browser q_keyboard q_wallpapers q_scheme
     q_look q_animations q_tune q_gaps_in q_gaps_out q_border q_rounding q_opacity q_blur
     q_bar q_lock q_screen q_font_ui q_font_mono q_vault q_import)
+
+# The same questions, in chunks. The menu uses these, and so does re-running the installer
+part_questions() {
+    case "$1" in
+        look)      echo q_look q_animations q_gaps_in q_gaps_out q_border q_rounding q_opacity q_blur ;;
+        apps)      echo q_terminal q_files q_browser ;;
+        keyboard)  echo q_keyboard ;;
+        monitors)  echo q_monitors ;;
+        wallpaper) echo q_wallpapers q_scheme ;;
+        bar)       echo q_bar ;;
+        idle)      echo q_lock q_screen ;;
+        fonts)     echo q_font_ui q_font_mono ;;
+        modules)   echo q_modules q_vault ;;
+    esac
+}
+part_options() {    # the menu rows for those chunks
+    local p
+    for p in "$@"; do printf '%s\n' "$p|${T[m_$p]}"; done
+}
+
+# Installer again, with automata already there: keep the answers, redo a part, or redo it all.
+# Sets MODS. 1 = Esc on the first question
+returning_setup() {
+    local how part next last i qs
+    MODS="$(modules_installed | xargs)"
+    how="$(ui_choose "${T[again_q]}" update "update|${T[again_update]}" "part|${T[again_part]}" "full|${T[again_full]}")" || return 1
+    case "$how" in
+        update) ui_ok "${T[again_kept]}"; return 0 ;;
+        full)   wizard "${SETUP_QUESTIONS[@]}"; return ;;
+    esac
+    while true; do
+        mapfile -t qs < <(part_options look apps keyboard wallpaper bar idle fonts modules)
+        part="$(ui_choose "${T[part_q]}" look "${qs[@]}")" || return 1
+        SETUP_MODE=custom TUNE=yes CUR_STEP=part
+        read -ra qs <<<"$(part_questions "$part")"
+        wizard "${qs[@]}" || { load_settings; MODS="$(modules_installed | xargs)"; continue; }
+        next="$(ui_choose "${T[part_next]}" only "only|${T[part_only]}" "on|${T[part_on]}")" || continue
+        [ "$next" = only ] && return 0
+        # the rest of the setup, starting right after this part
+        last="${qs[-1]}"
+        for i in "${!SETUP_QUESTIONS[@]}"; do [ "${SETUP_QUESTIONS[$i]}" = "$last" ] && break; done
+        wizard "${SETUP_QUESTIONS[@]:$((i + 1))}" && return 0
+    done
+}
 
 # ── pieces of the install ─────────────────────
 pick_modules() {
@@ -327,18 +371,14 @@ run_post() {    # post.sh can use everything here: ui_*, T[], run_sudo, settings
     done
 }
 
-# Empty wallpaper folder = the first login looks dead. Ours go in, and the first one gets set
-sample_wallpapers() {
-    [ -d "$SRC/wallpapers" ] || return 0
-    if [ -z "$(find -L "$WALLPAPER_DIR" -type f 2>/dev/null | head -1)" ]; then
-        mkdir -p "$WALLPAPER_DIR/automata"
-        cp "$SRC"/wallpapers/* "$WALLPAPER_DIR/automata/"
-        ui_ok "${T[wallpapers_added]} ${WALLPAPER_DIR/#$HOME/\~}/automata"
-    fi
-    if [ ! -f "$(cat "$STATE/wallpaper" 2>/dev/null)" ]; then
-        local first; first="$(find -L "$WALLPAPER_DIR" -type f -iregex '.*\.\(jpg\|jpeg\|png\|webp\)' | sort | head -1)"
-        [ -n "$first" ] && printf '%s\n' "$first" > "$STATE/wallpaper" && "$HOME/.local/bin/change-wallpaper" --colors >/dev/null 2>&1
-    fi
+# The official wallpapers live in ~/.local/share/automata/wallpapers and always show up in Super+W.
+# First install starts on Unit 01; after that, whatever you picked stays
+official_wallpaper() {
+    local wp="$SHARE/wallpapers/automata-ash.jpg"
+    [ -f "$wp" ] && [ ! -f "$(cat "$STATE/wallpaper" 2>/dev/null)" ] || return 0
+    printf '%s\n' "$wp" > "$STATE/wallpaper"
+    "$HOME/.local/bin/change-wallpaper" --colors >/dev/null 2>&1
+    ui_ok "${T[wallpapers_added]} UNIT 01 · ASH"
 }
 
 # ~/.local/bin in PATH (or `automata` is "command not found") + the shell module's extras.
@@ -368,6 +408,19 @@ shell_setup() {
         fi
     done
     [ "$want_shell" = 1 ] && ui_info "${T[shell_new_term]}"
+    [ "$want_shell" = 1 ] && fetch_twice
+}
+
+# shell.bash already runs fastfetch; if your rc (or something it sources) does too, you get two
+fetch_twice() {
+    local rc f files
+    for rc in $(user_rcs); do
+        files="$rc $(sed -n 's/^[^#]*\(source\|\.\)[[:space:]]\+\(~\|\$HOME\)\(\/[^[:space:];]*\).*/\3/p' "$rc" 2>/dev/null \
+            | grep -v '^/.config/automata/' | sed "s|^|$HOME|" | xargs)"
+        for f in $files; do
+            grep -qsE '^[^#]*\b(fastfetch|neofetch)\b' "$f" && ui_warn "${f/#$HOME/\~} ${T[fetch_twice]}"
+        done
+    done
 }
 
 # ── commands ─────────────────────────────────
@@ -396,7 +449,13 @@ cmd_install() {
         [ -n "$kb" ] && KB_LAYOUT="$kb"
     fi
     # Esc on the very first question = you're out
-    wizard "${SETUP_QUESTIONS[@]}" || exit 0
+    local before; before="$(modules_installed | xargs)"
+    if [ -n "$before" ] && [ -z "$PICKED" ]; then
+        UI_STEP=1; ui_step "${T[step_setup]}"; CUR_STEP=2
+        returning_setup || exit 0
+    else
+        wizard "${SETUP_QUESTIONS[@]}" || exit 0
+    fi
     check_spotify "$MODS"
 
     UI_STEP=3; ui_step "${T[step_packages]}"; install_packages "$MODS"
@@ -419,12 +478,14 @@ cmd_install() {
     self_install
     import_old_config
     save_settings
-    save_module_list "$(modules_installed | xargs) $MODS"
-    ui_busy "${T[busy_install]}" apply_all "$(modules_installed | xargs)"
+    # modules you unticked this time go away (or back to your old files)
+    local m; for m in $before; do grep -qw "$m" <<<"$MODS" || remove_module "$m"; done
+    save_module_list "$MODS"
+    ui_busy "${T[busy_install]}" apply_all "$MODS"
     ui_ok "$PLACED ${T[files]}"
     [ "$BACKED" -gt 0 ] && ui_info "$BACKED ${T[backup_saved]} → ${STATE/#$HOME/\~}/backups/$SESSION"
     ui_ok "${T[colors_done]}"
-    sample_wallpapers
+    official_wallpaper
     shell_setup
 
     ui_step "${T[step_extras]}"; run_post "$MODS"
@@ -490,13 +551,13 @@ cmd_uninstall() {
     local dirs; dirs="$(xargs -rd '\n' dirname < "$STATE/managed.list" | sort -u)"
     while IFS= read -r f; do restore_file "$f"; done < <(tac "$STATE/managed.list")
     [ -n "$generated" ] && xargs -rd '\n' rm -f <<<"$generated"
-    # and the folders we made, if they ended up empty
+    # and the folders it made, if they ended up empty
     while IFS= read -r f; do rmdir -p --ignore-fail-on-non-empty "$f" 2>/dev/null; done <<<"$dirs"
     # generated stuff can live in YOUR folders (Obsidian vault), so only its own folder, no climbing
     while IFS= read -r f; do rmdir "$f" 2>/dev/null; done <<<"$(xargs -rd '\n' dirname <<<"$generated")"
-    # our block in the shell rc files
+    # automata's block in the shell rc files
     local rc; for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do rc_clean "$rc"; done
-    # files we only moved aside (old hyprland.conf…) come back too
+    # files that were only moved aside (old hyprland.conf…) come back too
     if [ -f "$STATE/backups.list" ]; then
         local dst bak
         while IFS=$'\t' read -r dst bak; do
@@ -506,36 +567,40 @@ cmd_uninstall() {
     # Stuff outside $HOME (login screen) needs sudo to undo
     if [ -s "$STATE/system.list" ]; then
         local cmd
-        while IFS= read -r cmd; do run_sudo "SDDM" sh -c "$cmd" || true; done < "$STATE/system.list"
+        while IFS= read -r cmd; do run_sudo "SDDM" sh -c "$cmd" || true; done < <(awk '!seen[$0]++' "$STATE/system.list")     # same step saved twice = undo it once
     fi
+    # GTK theme, cursor… whatever gsettings had before
+    [ -f "$STATE/gsettings.restore" ] && sh "$STATE/gsettings.restore" 2>/dev/null
     rm -f "$HOME/.local/bin/automata"
     rm -rf "$SHARE" "$STATE" "$CONF"
+    stop_desktop
     ui_ok "${T[uninstall_done]}"
+    # Hyprland keeps the config path it started with, so going back to an old one takes a re-login
+    [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && ui_warn "${T[uninstall_relogin]}"
 }
 
 cmd_menu() {
     load_settings
-    [ -f "$CONF/modules" ] || { cmd_install; return; }     # never installed? then install
+    [ -f "$CONF/modules" ] || { cmd_install; return; }     # never installed? then install duh
     ui_banner "settings"
-    local pick before
+    local pick before rows
     while true; do
-        pick="$(ui_choose "${T[menu_title]}" "" \
-            "look|${T[m_look]}" "apps|${T[m_apps]}" "keyboard|${T[m_keyboard]}" "monitors|${T[m_monitors]}" "wallpaper|${T[m_wallpaper]}" \
-            "bar|${T[m_bar]}" "idle|${T[m_idle]}" "fonts|${T[m_fonts]}" "language|${T[m_language]}" \
-            "modules|${T[m_modules]}" "uninstall|${T[m_backups]}" "quit|${T[quit]}")"
+        mapfile -t rows < <(part_options look apps keyboard monitors wallpaper bar idle fonts language modules)
+        pick="$(ui_choose "${T[menu_title]}" "" "${rows[@]}" "uninstall|${T[m_backups]}" "quit|${T[quit]}")"
         SETUP_MODE=custom TUNE=yes CUR_STEP=menu
         local ok=0
         case "$pick" in
-            look)      wizard q_look q_animations q_gaps_in q_gaps_out q_border q_rounding q_opacity q_blur || ok=1 ;;
-            apps)      wizard q_terminal q_files q_browser || ok=1 ;;
-            keyboard)  wizard q_keyboard || ok=1 ;;
-            monitors)  wizard q_monitors || ok=1 ;;
-            wallpaper) wizard q_wallpapers q_scheme || ok=1
-                       [ "$ok" = 0 ] && [ "$(yes_no "${T[pick_wallpaper_now]}?" no)" = yes ] \
-                           && setsid -f "$HOME/.local/bin/change-wallpaper" >/dev/null 2>&1 ;;
-            bar)       wizard q_bar || ok=1 ;;
-            idle)      wizard q_lock q_screen || ok=1 ;;
-            fonts)     wizard q_font_ui q_font_mono || ok=1 ;;
+            look|apps|keyboard|monitors|bar|idle|fonts)
+                       wizard $(part_questions "$pick") || ok=1 ;;
+            wallpaper) wizard $(part_questions wallpaper) || ok=1
+                       if [ "$ok" = 0 ] && [ "$(yes_no "${T[pick_wallpaper_now]}?" no)" = yes ]; then
+                           # settings first, or the picker repaints with the old color style
+                           save_settings
+                           local was; was="$(cat "$STATE/wallpaper" 2>/dev/null)"
+                           "$HOME/.local/bin/change-wallpaper" >/dev/null 2>&1
+                           # picked one = colors already done. Closed the picker = apply below
+                           [ "$(cat "$STATE/wallpaper" 2>/dev/null)" != "$was" ] && { ui_ok "${T[saved]}"; continue; }
+                       fi ;;
             language)  ask_language ;;
             modules)
                 before="$(modules_installed | xargs)"
@@ -558,6 +623,10 @@ cmd_menu() {
         save_settings
         ui_busy "${T[busy_apply]}" apply_all >/dev/null || true
         ui_ok "${T[saved]}"
+        # the login screen has the language and fonts written into it, and lives behind sudo
+        if [[ "$pick" == language || "$pick" == fonts ]] && is_installed sddm && [ -d /usr/share/sddm/themes/automata ]; then
+            SDDM_ASK="${T[sddm_refresh]}" . "$SRC/modules/sddm/post.sh"
+        fi
     done
 }
 

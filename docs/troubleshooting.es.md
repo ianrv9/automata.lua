@@ -1,6 +1,6 @@
 # Problemas conocidos
 
-[🇺🇸 In English](troubleshooting.md)
+[English](troubleshooting.md)
 
 ## Hyprland se cierra justo al iniciar sesión (sobre todo la primera vez tras encender)
 
@@ -17,8 +17,8 @@ Para comprobarlo: `chrt -p $(pgrep -x Hyprland)` debe decir `SCHED_OTHER`.
 
 ## Se apaga la pantalla → Hyprland o las apps se cierran ("Oopsie daisy")
 
-Algunos monitores (sobre todo por HDMI) se "desconectan" al entrar en reposo, y a Hyprland 0.57
-no le cae bien. Solución: decirle al kernel que el conector siempre está conectado.
+Algunos monitores (sobre todo por HDMI) se desconectan al entrar en reposo, y Hyprland 0.57 puede
+cerrarse cuando pasa. La solución es decirle al kernel que el conector siempre está conectado.
 
 1. Busca el nombre del conector: `hyprctl monitors` (por ejemplo `HDMI-A-1`).
 2. Agrega `video=HDMI-A-1:e` a los parámetros del kernel (systemd-boot: `/etc/kernel/cmdline`;
@@ -53,16 +53,19 @@ Vesktop → Ajustes → Temas → activa `automata`. Desde ahí los colores sigu
 
 ## Edité un archivo de config y mi cambio desapareció
 
-Los archivos que instala automata se regeneran en cada `automata apply` (y cada vez que cambias algo
-en el menú). Pon lo tuyo donde está a salvo:
+Los archivos que instala automata se reescriben en cada `automata apply` y cada vez que cambias algo
+en el menú. Tu versión editada no se pierde: automata la copia a
+`~/.local/state/automata/backups/<fecha>/edited/` y muestra la ruta cuando pasa.
+
+Para que tus cambios se queden, ponlos donde automata no escribe:
 
 - Hyprland: `~/.config/hypr/personal.lua`
 - Plantillas extra de matugen: `~/.config/automata/matugen-extra.toml`
-- Todo lo demás del menú: `automata`
+- Ajustes que están en el menú: `automata`
 
-O haz un fork del repo y cambia el módulo directamente, para eso está.
+O haz un fork del repo y cambia el módulo.
 
 ## Otra cosa
 
-Abre un issue con qué hiciste, qué pasó y la salida de `hyprctl version`. Los logs están en
-`~/.cache/automata/` y `$XDG_RUNTIME_DIR/hypr/*/hyprland.log`.
+Abre un issue con qué hiciste, qué pasó y la salida de `automata info`. Logs útiles:
+`$XDG_RUNTIME_DIR/hypr/*/hyprland.log` (Hyprland) y `~/.cache/automata/mpvpaper.log` (fondo).

@@ -10,6 +10,7 @@
 :root[lwtheme] {
   --hud-accent: var(--urlbarview-background-color-selected, var(--hud-accent-fixed)) !important;
 }
+
 :root {
   /* Firefox's purple (buttons, checkboxes, light/dark picker) becomes the accent */
   --color-accent-primary: var(--hud-accent) !important;
@@ -66,12 +67,15 @@
 }
 
 /* desktop font, no thin weights */
-:root, menupopup, panel, .urlbar-input {
+:root,
+menupopup,
+panel,
+.urlbar-input {
   font-family: "@@FONT_UI@@", sans-serif !important;
   font-weight: 500 !important;
 }
 
-/* corner brackets, same trick as the bar and Discord (8 strokes of 2 px) */
+/* corner brackets, same as the bar and Discord (8 strokes of 2 px) */
 .urlbar-background,
 #sidebar-main {
   --hud-marca: var(--hud-accent);
@@ -93,18 +97,26 @@
   outline: none !important;
   background-color: var(--toolbar-field-background-color) !important;
 }
-#urlbar:is([focused], [open]) > .urlbar-background {
+
+#urlbar:is([focused], [open])>.urlbar-background {
   border-color: var(--hud-accent) !important;
   background-color: var(--toolbar-field-background-color-focus, var(--toolbar-field-background-color)) !important;
 }
+
 /* when suggestions open, the whole panel gets an accent shadow */
-#urlbar[open] > .urlbar-background {
+#urlbar[open]>.urlbar-background {
   box-shadow: 0 0 18px color-mix(in srgb, var(--hud-accent) 25%, transparent) !important;
 }
 
 /* ---------- 2 px line between the UI and the page ---------- */
-#navigator-toolbox { border-bottom: 2px solid var(--hud-line) !important; }
-#PersonalToolbar toolbarbutton.bookmark-item { border-radius: 3px !important; }
+#navigator-toolbox {
+  border-bottom: 2px solid var(--hud-line) !important;
+}
+
+#PersonalToolbar toolbarbutton.bookmark-item {
+  border-radius: 3px !important;
+}
+
 #PersonalToolbar toolbarbutton.bookmark-item:hover {
   background: color-mix(in srgb, var(--hud-accent) 14%, transparent) !important;
 }
@@ -114,13 +126,18 @@
   border-inline-end: 2px solid var(--hud-line) !important;
   background-color: var(--sidebar-background-color) !important;
 }
-.tab-background { border-radius: 3px !important; }
+
+.tab-background {
+  border-radius: 3px !important;
+}
+
 .tab-background:is([selected], [multiselected]),
 .tabbrowser-tab[selected] .tab-background {
   background: color-mix(in srgb, var(--hud-accent) 18%, transparent) !important;
   box-shadow: inset 2px 0 0 var(--hud-accent) !important;
   outline: none !important;
 }
+
 /* horizontal tabs, in case you turn the vertical ones off: bar at the bottom */
 #tabbrowser-tabs:not([orient="vertical"]) .tab-background:is([selected], [multiselected]) {
   box-shadow: inset 0 -2px 0 var(--hud-accent) !important;
@@ -134,7 +151,8 @@
 }
 
 /* ---------- menus and panels ---------- */
-menupopup, panel {
+menupopup,
+panel {
   --panel-border-radius: 3px !important;
   --panel-border-color: color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;
   --menu-border-color: color-mix(in srgb, var(--hud-accent) 45%, transparent) !important;

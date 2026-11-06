@@ -53,7 +53,7 @@ hl.on("hyprland.start", function ()
 end)
 
 
--- NVIDIA: what the Hyprland wiki asks for. Can't test it here (AMD), so tell us if it misbehaves
+-- NVIDIA: what the Hyprland wiki asks for. Can't test it here (AMD), so open an issue if it misbehaves
 if set("GPU", "other") == "nvidia" then
     hl.env("LIBVA_DRIVER_NAME", "nvidia")
     hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")

@@ -1,6 +1,6 @@
 # Troubleshooting
 
-[🇪🇸 En español](troubleshooting.es.md)
+[Español](troubleshooting.es.md)
 
 ## Hyprland crashes right after logging in (mostly the first time after boot)
 
@@ -17,8 +17,8 @@ Check it worked: `chrt -p $(pgrep -x Hyprland)` should say `SCHED_OTHER`.
 
 ## Screen turns off → Hyprland or apps crash ("Oopsie daisy")
 
-Some monitors (HDMI ones especially) "unplug" themselves when they go to sleep, and Hyprland 0.57
-doesn't love that. Fix: tell the kernel the connector is always connected.
+Some monitors (mostly over HDMI) disconnect when they go to sleep, and Hyprland 0.57 can crash when
+that happens. The fix is to tell the kernel the connector is always connected.
 
 1. Find the connector name: `hyprctl monitors` (e.g. `HDMI-A-1`).
 2. Add `video=HDMI-A-1:e` to your kernel parameters (systemd-boot: `/etc/kernel/cmdline`,
@@ -53,16 +53,19 @@ Vesktop → Settings → Themes → enable `automata`. After that colors follow 
 
 ## I edited a config file and my change disappeared
 
-Files installed by automata get re-rendered on every `automata apply` (and every time you change
-something in the menu). Put your stuff where it's safe:
+The files automata installs get rewritten on every `automata apply` and every time you change
+something in the menu. Your edited version isn't lost: automata copies it to
+`~/.local/state/automata/backups/<date>/edited/` and prints the path when it happens.
+
+To keep changes, put them where automata doesn't write:
 
 - Hyprland: `~/.config/hypr/personal.lua`
 - Extra matugen templates: `~/.config/automata/matugen-extra.toml`
-- Everything else in the menu: `automata`
+- Settings that are in the menu: `automata`
 
-Or fork the repo and change the module itself, that's what it's there for.
+Or fork the repo and change the module.
 
 ## Something else
 
-Open an issue with what you did, what happened and `hyprctl version`. Logs live in
-`~/.cache/automata/` and `$XDG_RUNTIME_DIR/hypr/*/hyprland.log`.
+Open an issue with what you did, what happened and the output of `automata info`. Useful logs:
+`$XDG_RUNTIME_DIR/hypr/*/hyprland.log` (Hyprland) and `~/.cache/automata/mpvpaper.log` (wallpaper).

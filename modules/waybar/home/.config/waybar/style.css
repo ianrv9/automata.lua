@@ -67,11 +67,29 @@ tooltip label { color: @text; font-family: "@@FONT_MONO@@"; }
 #system, #audio { padding: 0 14px; }
 
 /* launcher + power buttons */
+/* the launcher is automata's logo: logo.svg, which matugen recolors along with everything else.
+   It goes on top of the 8 bracket gradients, so all those lists get a 9th entry */
 #custom-launcher {
-    font-family: "@@FONT_MONO@@";
-    font-size: 16px;
-    color: @accent;
-    padding: 0 14px 0 12px;
+    min-width: 18px;
+    padding: 0 12px;
+    background-image:
+        url("logo.svg"),
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent),
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent),
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent),
+        linear-gradient(@accent, @accent), linear-gradient(@accent, @accent);
+    background-size:
+        18px 18px,
+        10px 2px, 2px 10px,
+        10px 2px, 2px 10px,
+        10px 2px, 2px 10px,
+        10px 2px, 2px 10px;
+    background-position:
+        center,
+        left top, left top,
+        right top, right top,
+        left bottom, left bottom,
+        right bottom, right bottom;
 }
 #custom-power {
     font-family: "@@FONT_MONO@@";

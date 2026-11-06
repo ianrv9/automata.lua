@@ -6,7 +6,7 @@
 -- stdout: Lua for personal.lua
 -- stderr: KB_LAYOUT=… / KB_VARIANT=… / CONFLICTS=n  (the installer reads these)
 --
--- Handles the common stuff. Anything it doesn't get goes in as a comment, never silently dropped.
+-- Handles the common stuff. Anything it doesn't get goes in as a comment.
 
 local old_path, ours_path = arg[1], arg[2]
 
@@ -45,7 +45,7 @@ do
         local mods, key = combo:match("^(.-)%s*%+%s*([^%+]+)$")
         if mods then taken[key_id(mods, key)] = combo else taken[key_id("", combo)] = combo end
     end
-    for i = 0, 9 do   -- the workspace loop
+    for i = 0, 9 do   -- workspace loop
         taken[key_id("SUPER", tostring(i))] = "SUPER + " .. i
         taken[key_id("SUPER SHIFT", tostring(i))] = "SUPER + SHIFT + " .. i
     end
@@ -73,7 +73,7 @@ end
 
 local function note(what) out.notes[#out.notes + 1] = "-- " .. what end
 
--- ── hyprland.conf (hyprlang) ─────────────────
+-- hyprland.conf (hyprlang) ─────────────────
 local function import_conf(text)
     local vars, section = {}, {}
     local function expand(s)
@@ -99,7 +99,7 @@ local function import_conf(text)
         elseif section[1] == "input" and (k == "kb_layout" or k == "kb_variant") then
             if k == "kb_layout" then kb_layout = v else kb_variant = v end
         elseif #section > 0 then
-            -- looks/animations/etc: that's what automata replaces, skip quietly
+            -- looks/animations/etc: that's what automata replaces, skip
         elseif k == "monitor" then
             local name, mode, pos, scale = v:match("^([^,]*),%s*([^,]*),?%s*([^,]*),?%s*([^,]*)")
             if mode and trim(mode) ~= "disable" then
@@ -167,7 +167,7 @@ local function import_lua(text)
         elseif l:match("^hl%.env%(.*%)$") and not l:match("CURSOR") then
             out.envs[#out.envs + 1] = l
         elseif l:match("^hl%.bind%(.*%)$") and select(2, l:gsub("%(", "")) == select(2, l:gsub("%)", "")) then
-            -- resolve `mainMod .. " + Q"` into "SUPER + Q" so we can check for clashes
+            -- resolve `mainMod .. " + Q"` into "SUPER + Q" so I can check for clashes
             local resolved = l:gsub("([%w_]+)%s*%.%.%s*\"", function(var)
                 local v = locals[var]
                 return v and (v:sub(1, -2)) or (var .. ' .. "')

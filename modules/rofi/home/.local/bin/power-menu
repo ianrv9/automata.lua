@@ -1,5 +1,5 @@
 #!/bin/bash
-# Power menu. Asks before shutting down, rebooting or logging out, because we've all misclicked.
+# Power menu. Asks before shutting down, rebooting or logging out, because misclicks happen.
 #   power-menu            the whole menu
 #   power-menu --logout   straight to "log out?" (Super+M)
 theme="$HOME/.config/rofi/menu.rasi"

@@ -4,83 +4,67 @@
 
 # automata.lua
 
-**A HUD-style Hyprland desktop that repaints itself from your wallpaper.**
-
-Corner brackets, square edges, Space Grotesk, and every app following the colors, live.
+A Hyprland rice with a HUD look. It takes the colors from your wallpaper and applies them to the whole desktop.
 
 ![Hyprland 0.55+](https://img.shields.io/badge/Hyprland-0.55%2B-b6c4ff?style=flat-square)
 ![Arch](https://img.shields.io/badge/Arch-based-b6c4ff?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-b6c4ff?style=flat-square)
 
-[🇪🇸 Leer en español](README.es.md)
-
-<!-- assets/preview.gif: change the wallpaper with Super+W, watch everything recolor -->
+[Español](README.es.md)
 
 </div>
 
----
-
-## What is this?
-
-These are **dotfiles**: the config files that decide how a Linux desktop looks and behaves.
-This set turns [Hyprland](https://hypr.land) (a tiling window manager) into a full desktop with one idea behind it:
-
-> **You pick a wallpaper, and the whole system dresses up to match.**
-
-The bar, terminal, notifications, launcher, lock screen, login screen, Discord, Firefox, Obsidian and
-Spotify all take their colors from your wallpaper (images *and* videos), and they change **on the spot**
-without restarting anything. Everything shares the same look: thin frames, corner brackets like a HUD
-and squared-off corners.
-
-It comes with an installer that asks you things in plain words, and a settings menu (`automata`), so
-**you never have to touch a config file** unless you want to.
-
-### Who's it for?
-
-- You use **Arch** (or something based on it: EndeavourOS, CachyOS, Manjaro…) and want to try Hyprland
-  without spending a weekend setting it up.
-- You already use Hyprland and want the wallpaper-colors magic, or just some of the pieces.
-  Everything is split into modules, so take only what you like.
-- You like poking around configs. Everything is commented for that, and adding your own module is just a folder.
-
-**Not for:** non-Arch distros (it can work, but you'll install packages by hand), or Hyprland older
-than 0.55. This uses the new Lua config.
-
-### Compatibility
-
-| | |
-|---|---|
-| **Tested on** | EndeavourOS · Hyprland 0.57 · AMD GPU · desktop, single monitor |
-| **Laptops** | Battery shows up in the bar by itself; brightness keys work |
-| **NVIDIA** | Detected automatically, gets the env vars Hyprland's wiki recommends. **Untested on real hardware**, reports welcome |
-| **Several monitors / HiDPI** | `automata` → Monitors (mode, scale, position per monitor) |
-| **Shells** | bash, zsh and fish |
-
-## Previews
-
-<!-- Drop screenshots in assets/ and they show up here -->
+<!-- Screenshots go in assets/ -->
 | Desktop | Launcher + wallpaper picker | Lock screen |
 |:---:|:---:|:---:|
 | ![](assets/desktop.png) | ![](assets/launcher.png) | ![](assets/lock.png) |
 | **Discord (Vesktop)** | **Firefox** | **Spotify** |
 | ![](assets/vesktop.png) | ![](assets/firefox.png) | ![](assets/spotify.png) |
 
-## What's in the box
+## What it is
 
-| Module | What you get |
+The config for my own desktop, cleaned up so anyone can install it. It has:
+
+- Configs for Hyprland, the bar, terminal, launcher, notifications, lock screen and login screen,
+  plus themes for Discord (Vesktop), Firefox, Obsidian and Spotify.
+- An installer that asks what you want before touching anything.
+- A settings menu (`automata`) to change things later without editing files.
+
+When you change the wallpaper (an image or a video), [matugen](https://github.com/InioX/matugen)
+makes a palette from it and every app above reloads with the new colors. Nothing needs a restart.
+
+The look: thin frames with corner brackets, almost square corners, Space Grotesk and JetBrains Mono.
+
+## Compatibility
+
+| | |
 |---|---|
-| **Hyprland** | Window manager config: gradient borders, quick animations, blur, keybinds, lock screen, idle |
-| **Waybar** | The bar: workspaces, active window, clock, music, CPU/RAM/temp, audio, network, power menu |
-| **Rofi** | App launcher, wallpaper picker with thumbnails, clipboard history |
-| **Kitty** | See-through terminal in the wallpaper's colors |
+| **Distro** | Arch and Arch-based (EndeavourOS, CachyOS, Manjaro…). On other distros you'd have to install the packages yourself |
+| **Hyprland** | 0.55 or newer (it uses the Lua config). Last tested on 0.57 |
+| **Tested on** | EndeavourOS, AMD GPU, desktop PC, one monitor |
+| **Laptops** | The battery shows up in the bar and the brightness keys work |
+| **NVIDIA** | Detected, and the env vars from the Hyprland wiki get set. Not tested on real hardware |
+| **Several monitors / HiDPI** | `automata` → Monitors |
+| **Shells** | bash, zsh and fish |
+
+## Modules
+
+You choose which ones to install. Apps you already have come pre-selected.
+
+| Module | What it does |
+|---|---|
+| **Hyprland** | Window manager: borders, animations, blur, keybinds, lock screen (hyprlock), idle (hypridle) |
+| **Waybar** | Bar: workspaces, active window, clock, music, CPU/RAM/temperature, battery, audio, network, power menu |
+| **Rofi** | App launcher, wallpaper picker with thumbnails, clipboard history, power menu |
+| **Kitty** | Terminal |
 | **Dunst** | Notifications |
-| **GTK** | GTK 3/4 apps (Thunar, settings…) in the same palette |
-| **Shell** | Nicer bash: prompt, `ls` with icons, smart `cd`, fuzzy history, fastfetch |
-| **Vesktop** | Discord, HUD style, translucent and readable on any wallpaper |
-| **Firefox** | HUD interface, your wallpaper on the new tab page, live colors |
-| **Obsidian** | CSS snippet for your vault that reloads by itself |
-| **Spotify** | Spicetify theme that recolors **live**, no `spicetify apply` every time |
-| **SDDM** | Login screen to match (needs sudo, it'll tell you exactly what it runs) |
+| **GTK** | Colors for GTK 3/4 apps (Thunar, settings…) |
+| **Shell** | Prompt, `ls` with icons (eza), `cd` with zoxide, history search with fzf, fastfetch with the automata logo |
+| **Vesktop** | Discord theme, based on [Midnight](https://github.com/refact0r/midnight-discord) |
+| **Firefox** | Interface theme, your wallpaper on the new tab page, live colors through Pywalfox |
+| **Obsidian** | CSS snippet for your vault |
+| **Spotify** | Spicetify theme. Colors change live, without running `spicetify apply` each time |
+| **SDDM** | Login screen. Needs sudo, and shows the exact commands first |
 
 ## Install
 
@@ -90,29 +74,39 @@ cd automata.lua
 ./install
 ```
 
-That's it. The installer walks you through it:
+The installer goes through these steps:
 
-1. **Language**: English or Spanish (all of it, the desktop too).
-2. **Modules**: pick with the arrow keys. Apps you already have come pre-ticked.
-3. **Setup**: *Quick* (sensible defaults) or *Custom* (terminal, file manager, browser, keyboard layout,
-   wallpaper folder, color style, look, bar position, lock times, fonts).
-4. **Your old Hyprland config** (if you have one): its keybinds, monitors, env vars and startup programs
-   get imported into `personal.lua`, so nothing you set up is lost. Binds that clash with the theme's
-   are left commented out for you to decide.
-5. **Packages**: shows what's missing and offers to install it, showing the exact command first.
-6. **Plan**: shows which of your files will be replaced. Nothing has been touched yet.
-7. **Install**: copies everything, backs up whatever it replaces, generates your colors.
-   No wallpapers yet? Three sample ones (made for this theme) get added.
-8. **Last touches**: per-app bits (Firefox profile, Spotify, login screen), each one asks first.
+1. **Language**: English or Spanish. It applies to the desktop too (bar, menus, lock screen).
+2. **Modules**: which ones to install.
+3. **Setup**: *Quick* uses the defaults. *Custom* asks about terminal, file manager, browser,
+   keyboard layout, wallpaper folder, color style, look, bar position, lock times and fonts.
+4. **Your previous Hyprland config**, if there is one: keybinds, monitors, env vars and startup
+   programs get copied into `~/.config/hypr/personal.lua`. Keybinds that clash with automata's are
+   left commented out.
+5. **Packages**: lists what's missing and shows the install command before running it.
+6. **Plan**: lists which of your files will be replaced. Nothing has changed up to this point.
+7. **Install**: copies the files, backs up the ones it replaces and generates the colors.
+   It starts with the official wallpaper *Unit 01 · Ash*.
+8. **Extras**: Firefox profile, Spotify, login screen. Each one asks first.
 
-> Paranoid? Same here. `./install --dry-run` goes through everything and shows what it *would* do, without changing a thing.
+`./install --dry-run` goes through all of it without changing anything, so you can see what it would do.
 
-Every file it replaces is backed up in `~/.local/state/automata/backups/`, and `automata uninstall`
-puts them all back.
+Replaced files are backed up in `~/.local/state/automata/backups/`. `automata uninstall` puts them back.
 
-## Changing stuff
+## Official wallpapers
 
-Run **`automata`** in a terminal and pick what you want to change:
+Three wallpapers come with automata. Each one gives a different palette, so they're a quick way to
+see how the colors change. They always show up in the picker (**Super + W**), after your own.
+
+| Unit 01 · Ash | Unit 02 · Tide | Unit 03 · Ember |
+|:---:|:---:|:---:|
+| ![](wallpapers/automata-ash.jpg) | ![](wallpapers/automata-tide.jpg) | ![](wallpapers/automata-ember.jpg) |
+
+They're generated with `tools/make-wallpaper.sh`, which can make more in other colors.
+
+## Settings
+
+Run `automata`:
 
 ```
  ▸ Style: gaps, borders, blur, animations
@@ -128,79 +122,62 @@ Run **`automata`** in a terminal and pick what you want to change:
    Uninstall and restore previous files
 ```
 
-Changes apply right away. Under the hood they're saved in `~/.config/automata/settings.conf`,
-a plain text file you can also edit by hand (then run `automata apply`):
+Changes apply right away. They're saved in `~/.config/automata/settings.conf`, which you can also
+edit by hand and then run `automata apply`:
 
 | Setting | What it does | Default |
 |---|---|---|
-| `LANGUAGE` | `en` or `es`, for the whole desktop | your system's |
-| `WALLPAPER_DIR` | where your wallpapers live | `~/Pictures/Wallpapers` |
-| `COLOR_SCHEME` | how colors are picked: `scheme-content`, `scheme-tonal-spot`, `scheme-vibrant`, `scheme-expressive`, `scheme-monochrome` | `scheme-content` |
-| `TERMINAL` / `FILE_MANAGER` / `BROWSER` | what opens with Super+Q / E / B | kitty / thunar / firefox |
-| `KB_LAYOUT` / `KB_VARIANT` | keyboard layout | whatever you use now |
+| `LANGUAGE` | `en` or `es` | your system's |
+| `WALLPAPER_DIR` | your wallpaper folder | `~/Pictures/Wallpapers` |
+| `COLOR_SCHEME` | how the palette is made: `scheme-content`, `scheme-tonal-spot`, `scheme-vibrant`, `scheme-expressive`, `scheme-monochrome` | `scheme-content` |
+| `TERMINAL` / `FILE_MANAGER` / `BROWSER` | what Super + Q / E / B open | kitty / thunar / firefox |
+| `KB_LAYOUT` / `KB_VARIANT` | keyboard layout | the one you use now |
 | `GAPS_IN` / `GAPS_OUT` | space between windows / around the screen | 6 / 14 |
 | `BORDER_SIZE` / `ROUNDING` | border thickness / corner rounding | 2 / 4 |
 | `BLUR` | blur behind the bar, menus and terminal | yes |
 | `ANIMATIONS` | `fast`, `relaxed` or `off` | fast |
-| `INACTIVE_OPACITY` | how see-through unfocused windows are | 0.94 |
+| `INACTIVE_OPACITY` | opacity of unfocused windows | 0.94 |
 | `BAR_POSITION` | `top` or `bottom` | top |
 | `FONT_UI` / `FONT_MONO` | fonts | Space Grotesk / JetBrainsMono Nerd Font |
 | `LOCK_AFTER` / `SCREEN_OFF_AFTER` | idle minutes, `0` = never | 10 / 11 |
-| `MONITORS` | per-monitor mode, position and scale (the menu writes it) | everything automatic |
+| `MONITORS` | mode, position and scale per monitor (the menu fills it in) | automatic |
 | `GPU` | `nvidia` adds NVIDIA's env vars | detected |
 
-### Going further
+### Your own changes
 
-- **Your own Hyprland stuff** (monitors, binds, autostart) goes in `~/.config/hypr/personal.lua`.
-  Updates never touch it, and it loads last, so it wins over everything.
-- **Your own matugen templates**: `~/.config/automata/matugen-extra.toml`.
-- **Changing a module itself**: fork the repo, edit `modules/<name>/`, run `./install`.
+- **Hyprland** (monitors, keybinds, startup programs): `~/.config/hypr/personal.lua`. It loads last,
+  so it overrides everything else, and updates don't touch it.
+- **Extra matugen templates**: `~/.config/automata/matugen-extra.toml`.
+- **Anything else**: the files automata installs get rewritten on every apply. If you edit one by hand,
+  automata keeps a copy of your version in the backups and tells you where. To change a module for
+  good, fork the repo and edit `modules/<name>/`.
 
 ## Keybinds
 
-| Keys | Does |
+| Keys | Action |
 |---|---|
-| `Super + W` | Pick a wallpaper (everything repaints) |
 | `Super + Q` | Terminal |
 | `Super + R` | App launcher |
 | `Super + E` | File manager |
 | `Super + B` | Browser |
+| `Super + W` | Wallpaper picker |
 | `Super + C` | Close window |
 | `Super + V` | Float / unfloat window |
+| `Super + P` | Pseudo-tile |
+| `Super + J` | Toggle split direction |
+| `Super + arrows` | Move focus |
 | `Super + 1…0` | Go to workspace |
 | `Super + Shift + 1…0` | Move window to workspace |
-| `Super + S` / `Super + Alt + S` | Scratchpad / send window there |
-| `Super + Shift + S` or `Print` | Screenshot a region (edit with swappy) |
+| `Super + mouse wheel` | Next / previous workspace |
+| `Super + S` / `Super + Alt + S` | Show scratchpad / send window to it |
+| `Super + Shift + S` or `Print` | Screenshot of a region (opens swappy) |
 | `Super + Shift + V` | Clipboard history |
 | `Super + L` | Lock |
 | `Super + Delete` | Turn the screen off |
 | `Super + M` | Log out (asks first) |
-| `Super + drag` | Move (left click) / resize (right click) |
+| `Super + left / right drag` | Move / resize window |
 
-## How it works (for the curious)
-
-```
- wallpaper ──► change-wallpaper ──► matugen ──► templates ──► colors.css, colors.lua, …
-     │                                                              │
-     └──► mpvpaper (shows it, videos too)        every app reloads its colors file
-```
-
-- **[matugen](https://github.com/InioX/matugen)** pulls a Material You palette out of the wallpaper and fills
-  in one template per app. Apps that can reload live (waybar, kitty, dunst, Hyprland, Obsidian, Vesktop)
-  do it on their own. Spotify gets a tiny script that checks for new colors every 2 seconds. Firefox goes through Pywalfox.
-- **The installer** (`bin/automata`) is plain bash. Each folder in `modules/` is a module:
-
-  ```
-  modules/waybar/
-  ├── module.conf    name, description, packages, dependencies
-  ├── home/          copied into your $HOME as-is (with your settings filled in)
-  ├── templates/     matugen templates
-  ├── matugen.toml   which template makes which file
-  └── post.sh        optional extra steps
-  ```
-
-  Files can have `@@SETTING@@` and `@@t:text@@` placeholders. That's how one file serves both languages and all your settings.
-  **Adding a module = adding a folder.**
+Media, volume and brightness keys work as expected.
 
 ## Updating
 
@@ -208,7 +185,13 @@ a plain text file you can also edit by hand (then run `automata apply`):
 cd automata.lua && git pull && ./install
 ```
 
-Your settings and `personal.lua` stay as they are.
+If automata is already installed, the installer asks what to do:
+
+- **Update, keep the current settings**: no questions.
+- **Change one part of the settings**: then either apply only that, or continue the setup from there.
+- **Set everything up again**.
+
+`settings.conf` and `personal.lua` are kept.
 
 ## Uninstall
 
@@ -216,22 +199,46 @@ Your settings and `personal.lua` stay as they are.
 automata uninstall
 ```
 
-Your old files come back, and what automata added goes away. Packages stay, since you might be using them.
+Restores your previous files and removes what automata added. Installed packages stay.
 
-## Something broke?
+## How it works
 
-Check [docs/troubleshooting.md](docs/troubleshooting.md): login crash, monitor turning off,
-Spotify updates, Firefox not changing… If it's not there, open an issue and paste the output of
-`automata info` (versions of everything, it's what's needed to reproduce it).
+```
+ wallpaper ──► change-wallpaper ──► matugen ──► templates ──► colors.css, colors.lua, …
+     │                                                              │
+     └──► mpvpaper (shows it, videos too)        each app reloads its colors file
+```
 
-Hyprland, Discord and Firefox change things on their side every few weeks. `automata info` says which
-Hyprland version this was last tested on, and the installer warns you if yours is newer.
+- matugen fills in one template per app. Waybar, kitty, dunst, Hyprland, Obsidian and Vesktop reload
+  those files on their own. Spotify has a small script that checks for new colors every 2 seconds,
+  and Firefox goes through Pywalfox.
+- The installer (`bin/automata`) is bash. Each folder in `modules/` is a module:
+
+  ```
+  modules/waybar/
+  ├── module.conf    name, description, packages, dependencies
+  ├── home/          files copied into your $HOME
+  ├── templates/     matugen templates
+  ├── matugen.toml   which template makes which file
+  └── post.sh        optional extra steps
+  ```
+
+  Files can use `@@SETTING@@` and `@@t:text@@` placeholders, which get replaced with your settings
+  and the chosen language on install. Adding a module means adding a folder.
+
+## Problems
+
+See [docs/troubleshooting.md](docs/troubleshooting.md). If it's not there, open an issue with the
+output of `automata info`.
+
+Hyprland, Discord and Firefox change often. `automata info` shows the Hyprland version this was last
+tested on, and the installer warns you if yours is newer.
 
 ## Credits
 
-- [matugen](https://github.com/InioX/matugen) does the color magic.
-- The Vesktop theme sits on top of [Midnight](https://github.com/refact0r/midnight-discord) by refact0r.
-- [gum](https://github.com/charmbracelet/gum) makes the installer pretty.
+- [matugen](https://github.com/InioX/matugen) for the palettes.
+- [Midnight](https://github.com/refact0r/midnight-discord) by refact0r, the base of the Vesktop theme.
+- [gum](https://github.com/charmbracelet/gum) for the installer menus.
 - Fonts: [Space Grotesk](https://github.com/floriankarsten/space-grotesk), [JetBrains Mono Nerd Font](https://www.nerdfonts.com/).
 
-MIT © Calternar. Do whatever you want with it, just keep the name somewhere.
+MIT © Calternar

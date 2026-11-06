@@ -20,7 +20,7 @@ Rectangle {
     property int sessionIndex: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
     property bool busy: false
 
-    // invisible repeaters, just so we can read names by index
+    // invisible repeaters, just so names can be read by index
     Repeater {
         id: users
         model: userModel
@@ -37,6 +37,14 @@ Rectangle {
     }
     readonly property var currentUser: users.count > 0 ? users.itemAt(userIndex) : null
     readonly property var currentSession: sessions.count > 0 ? sessions.itemAt(sessionIndex) : null
+
+    function switchUser(step) {
+        if (busy || users.count < 2) return
+        userIndex = (userIndex + step + users.count) % users.count
+        password.text = ""
+        message.text = ""
+        password.forceActiveFocus()
+    }
 
     function logIn() {
         if (busy || !currentUser) return
@@ -104,9 +112,30 @@ Rectangle {
         }
     }
 
-    // ---------- top: machine name ----------
+    // ---------- top: logo + machine name ----------
+    // the A from automata's logo, drawn here so it takes the accent color like everything else
+    Canvas {
+        id: logo
+        x: 92; y: 56
+        width: 24; height: 24
+        property color tint: root.accent
+        onTintChanged: requestPaint()
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.reset()
+            ctx.scale(width / 76, height / 76)
+            ctx.translate(-26, -26)
+            ctx.lineCap = "square"
+            ctx.strokeStyle = tint
+            ctx.lineWidth = 9
+            ctx.beginPath(); ctx.moveTo(38, 96); ctx.lineTo(64, 32); ctx.lineTo(90, 96); ctx.stroke()
+            ctx.globalAlpha = 0.6
+            ctx.lineWidth = 7
+            ctx.beginPath(); ctx.moveTo(50, 76); ctx.lineTo(78, 76); ctx.stroke()
+        }
+    }
     Text {
-        x: 92; y: 62
+        x: 132; y: 62
         text: (sddm.hostName || "automata").toUpperCase()
         color: root.textDim
         font.family: root.fontMono
@@ -141,14 +170,28 @@ Rectangle {
 
         Item { width: 1; height: 72 }
 
-        Text {
+        // user: the arrows (or ↑ ↓ in the password field) only show up when there's more than one
+        Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: root.currentUser ? root.currentUser.displayName : ""
-            color: root.textColor
-            font.family: root.fontUi
-            font.weight: Font.Medium
-            font.pixelSize: 21
-            font.letterSpacing: 1
+            spacing: 22
+            HudButton {
+                text: "‹"; font.pixelSize: 21
+                visible: users.count > 1
+                onActivated: root.switchUser(-1)
+            }
+            Text {
+                text: root.currentUser ? root.currentUser.displayName : ""
+                color: root.textColor
+                font.family: root.fontUi
+                font.weight: Font.Medium
+                font.pixelSize: 21
+                font.letterSpacing: 1
+            }
+            HudButton {
+                text: "›"; font.pixelSize: 21
+                visible: users.count > 1
+                onActivated: root.switchUser(1)
+            }
         }
 
         Item { width: 1; height: 22 }
@@ -177,6 +220,8 @@ Rectangle {
                 Keys.onReturnPressed: root.logIn()
                 Keys.onEnterPressed: root.logIn()
                 Keys.onEscapePressed: text = ""
+                Keys.onUpPressed: root.switchUser(-1)
+                Keys.onDownPressed: root.switchUser(1)
             }
             Text {
                 anchors.centerIn: parent

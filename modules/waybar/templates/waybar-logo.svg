@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="26 26 76 76" fill="none" stroke="{{colors.primary.default.hex}}" stroke-linecap="square">
+  <!-- just the A: the panel around it already has the corner brackets -->
+  <path d="M38 96 64 32l26 64" stroke-width="9"/>
+  <path d="M50 76h28" stroke-width="7" stroke-opacity=".6"/>
+</svg>

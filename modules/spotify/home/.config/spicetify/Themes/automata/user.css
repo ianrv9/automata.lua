@@ -76,6 +76,11 @@ img, .main-image-image, .main-coverSlotExpanded-container { border-radius: 3px !
   background-color: var(--hud-accent) !important;
   color: var(--spice-main) !important;
 }
+/* Spotify draws its own round white circle inside the button. It goes, so there's only the square */
+[data-testid="control-button-playpause"] * {
+  background-color: transparent !important;
+  border-radius: 3px !important;
+}
 [data-testid="control-button-playpause"] svg { fill: var(--spice-main) !important; }
 /* progress + volume bars in the accent */
 .progress-bar {

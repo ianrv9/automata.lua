@@ -8,6 +8,7 @@
 . "$HOME/.local/share/automata/defaults.conf" 2>/dev/null
 . "$HOME/.config/automata/settings.conf" 2>/dev/null
 
+OFFICIAL="$HOME/.local/share/automata/wallpapers"
 CACHE="$HOME/.cache/automata"
 CURRENT="$HOME/.local/state/automata/wallpaper"
 mkdir -p "$CACHE/thumbs" "${CURRENT%/*}"
@@ -64,8 +65,11 @@ fi
 
 PICK="$1"
 if [ -z "$PICK" ]; then
-    [ -d "$WALLPAPER_DIR" ] || { notify-send -u critical "@@t:wallpaper@@" "@@t:wp_no_dir@@ $WALLPAPER_DIR (@@t:wp_no_dir_hint@@)"; exit 1; }
-    mapfile -t FILES < <(find -L "$WALLPAPER_DIR" -type f -iregex '.*\.\(jpg\|jpeg\|png\|webp\|gif\|mp4\|mkv\|webm\|mov\)' | sort)
+    # yours first, the official ones at the end
+    mapfile -t FILES < <(
+        [ -d "$WALLPAPER_DIR" ] && find -L "$WALLPAPER_DIR" -type f -iregex '.*\.\(jpg\|jpeg\|png\|webp\|gif\|mp4\|mkv\|webm\|mov\)' | sort
+        find "$OFFICIAL" -type f -name '*.jpg' 2>/dev/null | sort)
+    [ -d "$WALLPAPER_DIR" ] || notify-send "@@t:wallpaper@@" "@@t:wp_no_dir@@ $WALLPAPER_DIR (@@t:wp_no_dir_hint@@)"
     [ ${#FILES[@]} -gt 0 ] || { notify-send "@@t:wallpaper@@" "@@t:wp_empty@@ $WALLPAPER_DIR"; exit 1; }
     # rofi's "\0icon\x1f" trick: each row gets its thumbnail as icon
     CHOSEN=$(for f in "${FILES[@]}"; do

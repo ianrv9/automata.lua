@@ -1,0 +1,9 @@
+[38;2;{{colors.primary.default.red}};{{colors.primary.default.green}};{{colors.primary.default.blue}}m▛▀▀            ▀▀▜
+▌       ▄▄       ▐
+       ▟██▙
+      ▟█▘▝█▙
+     ▟█▘  ▝█▙
+    ▟█[38;2;{{colors.outline.default.red}};{{colors.outline.default.green}};{{colors.outline.default.blue}}m▀▀▀▀▀▀[38;2;{{colors.primary.default.red}};{{colors.primary.default.green}};{{colors.primary.default.blue}}m█▙
+   ▟█▘      ▝█▙
+▌                ▐
+▙▄▄            ▄▄▟[0m

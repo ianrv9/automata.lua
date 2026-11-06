@@ -1,3 +1,8 @@
 [templates.waybar]
 input_path = "~/.config/matugen/templates/waybar.css"
 output_path = "~/.config/waybar/colors.css"
+
+# the logo in the launcher button, same color as everything else
+[templates.waybar_logo]
+input_path = "~/.config/matugen/templates/waybar-logo.svg"
+output_path = "~/.config/waybar/logo.svg"
